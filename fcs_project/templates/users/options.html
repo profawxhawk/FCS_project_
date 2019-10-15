@@ -1,0 +1,17 @@
+{% extends 'users/welcome.html' %}
+{% block head %}
+<title>Options</title>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+<button class="btn btn-outline-info" type="submit">Add money to wallet</button>
+<br><br>
+<button class="btn btn-outline-info" type="submit">send money</button><br><br>
+<button class="btn btn-outline-info" type="submit">view money requests</button><br><br>
+<button class="btn btn-outline-info" type="submit">See groups</button><br><br>
+{% if not user.premium_user %}
+<button class="btn btn-outline-info" type="submit">upgrade</button>
+{% endif %}
+</div>
+{% endblock %}
