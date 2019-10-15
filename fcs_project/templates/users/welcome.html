@@ -1,0 +1,10 @@
+<h1>Welcome to social network</h1>
+{% if user.is_authenticated %}
+	
+Hi {{ user.username }}, Welcome to social network!
+<button class="btn btn-outline-info" type="submit" ><a href="{% url 'logout' %}">Logout</a></button>
+{% else %}
+You are not logged in 
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'login' %}">Login</a></button>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'signup' %}">signup</a></button>
+{% endif %}
