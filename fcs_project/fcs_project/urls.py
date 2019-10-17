@@ -20,6 +20,9 @@ from django.contrib.auth import views as auth_views
 from users import views as user_views
 
 urlpatterns = [
+    path('change_password/',user_views.changepass,name='change_password'),
+    path('editprofile/',user_views.editprofile,name='editprofile'),
+    path('profilepage/',user_views.profilepage,name='profilepage'),
     path('options/',user_views.options,name='useroptions'),
     path('welcome/',user_views.welcome,name='welcomepage'),
     path('home',user_views.home,name='homepage'),
@@ -28,4 +31,5 @@ urlpatterns = [
     path('logout/', user_views.logout_view, name='logout'),
     path('signup/', user_views.signup, name='signup'),
     path('admin/', admin.site.urls)
+
 ]

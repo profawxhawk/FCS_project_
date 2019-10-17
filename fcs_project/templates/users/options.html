@@ -10,6 +10,7 @@
 <button class="btn btn-outline-info" type="submit">send money</button><br><br>
 <button class="btn btn-outline-info" type="submit">view money requests</button><br><br>
 <button class="btn btn-outline-info" type="submit">See groups</button><br><br>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'change_password' %}">Change Password</a></button><br><br>
 {% if not user.premium_user %}
 <button class="btn btn-outline-info" type="submit">upgrade</button>
 {% endif %}

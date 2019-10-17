@@ -1,0 +1,22 @@
+{% extends 'users/welcome.html' %}
+{% block  head %}
+<title>Profile page</title>
+{% endblock %}
+{% block body %}
+<div class="container">
+    <p>
+        <h1>Welcome to your profile page</h1>
+        <p><h3>Email_id:{{user.email}}</h3></p>
+        <p><h3>Username:{{user.username}}</h3></p>
+        <p><h3>Firstname:{{user.first_name}}</h3></p>
+        <p><h3>Lastname:{{user.last_name}}</h3></p>
+        <p><h3>Your account balance:{{user.account_balance}}</h3></p>
+        <p><h3>Your description:{{user.userprofile.description}}</h3></p>
+        <p><h3>Your City:{{user.userprofile.city}}</h3></p>
+        <p><h3>Your phone:{{user.userprofile.phone}}</h3></p>
+        <p><h3>Your privacy settings:{{user.userprofile.privacy}}</h3></p>
+        <button class="btn btn-outline-info" type="submit"><a href="{% url 'editprofile' %}">edit profile</a></button>
+    </p>
+    
+</div>
+{% endblock %}

@@ -24,7 +24,7 @@
                 {% if user.is_authenticated %}
                 <ul class="nav navbar-nav">
                     <li><a href="{% url 'homepage' %}">Home</a></li>
-                    <li><a href="{% url 'homepage' %}">Profile</a></li>
+                    <li><a href="{% url 'profilepage' %}">Profile</a></li>
                     <li><a href="{% url 'homepage' %}">Settings</a></li>
                     <li><a href="{% url 'useroptions' %}">options</a></li>
                 </ul>
@@ -33,7 +33,7 @@
                 </ul>
                 {% else %}
                 <ul class="nav navbar-nav">
-                    <li><a href="{% url 'logout' %}">Reset Password</a></li>
+                    <li><a href="{% url 'login' %}">Reset Password</a></li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
                   <li><a href="{% url 'login' %}">Login</a></li>

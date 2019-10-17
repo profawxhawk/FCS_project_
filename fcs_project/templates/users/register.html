@@ -1,4 +1,6 @@
-{% block content %}
+
+{% extends 'users/welcome.html' %}
+{% block body %}
 <div class="content-section">
         <form method="POST">
             {% csrf_token %}
