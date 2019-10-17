@@ -20,16 +20,16 @@ from django.contrib.auth import views as auth_views
 from users import views as user_views
 
 urlpatterns = [
+    path('add_friend/(?P<pk>\d+)',user_views.add_friend,name='add_friend'),
     path('change_password/',user_views.changepass,name='change_password'),
     path('editprofile/',user_views.editprofile,name='editprofile'),
     path('profilepage/',user_views.profilepage,name='profilepage'),
     path('options/',user_views.options,name='useroptions'),
     path('welcome/',user_views.welcome,name='welcomepage'),
     path('home',user_views.home,name='homepage'),
-    path('',user_views.home, name='home'),
+    path('',user_views.welcome, name='home'),
     path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
     path('logout/', user_views.logout_view, name='logout'),
     path('signup/', user_views.signup, name='signup'),
     path('admin/', admin.site.urls)
-
 ]

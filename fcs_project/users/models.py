@@ -16,9 +16,15 @@ class UserProfile(models.Model):
     city = models.CharField(max_length=200,default='None')
     phone=models.IntegerField(default=0)
 
+class posts(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    text=models.CharField(max_length=300,default="")
+    created = models.DateTimeField(auto_now_add=True)
+
 
 def create_profile(sender, **kwargs):
     if kwargs['created']:
         user_profile = UserProfile.objects.create(user=kwargs['instance'])
+       
 
 post_save.connect(create_profile, sender=User)
