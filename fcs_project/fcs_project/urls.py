@@ -20,6 +20,7 @@ from django.contrib.auth import views as auth_views
 from users import views as user_views
 
 urlpatterns = [
+    path('view_friend/(?P<pk>\d+)',user_views.view_friend,name='view_friend'),
     path('add_friend/(?P<pk>\d+)',user_views.add_friend,name='add_friend'),
     path('change_password/',user_views.changepass,name='change_password'),
     path('editprofile/',user_views.editprofile,name='editprofile'),
@@ -28,8 +29,13 @@ urlpatterns = [
     path('welcome/',user_views.welcome,name='welcomepage'),
     path('home',user_views.home,name='homepage'),
     path('',user_views.welcome, name='home'),
+    path('/',user_views.welcome, name='home'),
+    path('timeline/(?P<pk>\d+)',user_views.timeline,name='Timeline'),
     path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
     path('logout/', user_views.logout_view, name='logout'),
     path('signup/', user_views.signup, name='signup'),
-    path('admin/', admin.site.urls)
+    path('admin/', admin.site.urls),
+    path('accept_request/(?P<pk>\d+)',user_views.accept_request,name='accept_request'),
+    path('reject_request/(?P<pk>\d+)',user_views.reject_request,name='reject_request'),
+    path('remove_friend/(?P<pk>\d+)',user_views.remove_friend,name='remove_friend')
 ]

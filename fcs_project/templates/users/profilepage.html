@@ -3,6 +3,7 @@
 <title>Profile page</title>
 {% endblock %}
 {% block body %}
+{% if not view %}
 <div class="container">
     <p>
         <h1>Welcome to your profile page</h1>
@@ -16,7 +17,19 @@
         <p><h3>Your phone:{{user.userprofile.phone}}</h3></p>
         <p><h3>Your privacy settings:{{user.userprofile.privacy}}</h3></p>
         <button class="btn btn-outline-info" type="submit"><a href="{% url 'editprofile' %}">edit profile</a></button>
-    </p>
-    
+    </p> 
 </div>
+{% else %}
+<div class="container">
+    <p>
+        <h1>Welcome to {{username}}'s profile page</h1>
+        <p><h3>Firstname:{{first}}</h3></p>
+        <p><h3>Lastname:{{last}}</h3></p>
+        <p><h3>Description:{{user.userprofile.description}}</h3></p>
+        <p><h3>City:{{user.userprofile.city}}</h3></p>
+        <p><h3>Phone:{{user.userprofile.phone}}</h3></p>
+        <button class="btn btn-outline-info" type="submit"><a href="{% url 'Timeline' pk=pk1 %}">Got to wall</a></button>
+    </p> 
+</div>
+{% endif %}
 {% endblock %}

@@ -17,11 +17,18 @@ class UserProfile(models.Model):
     phone=models.IntegerField(default=0)
 
 class posts(models.Model):
-    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='owner')
     text=models.CharField(max_length=300,default="")
     created = models.DateTimeField(auto_now_add=True)
+    posted_by = models.ForeignKey(User,on_delete=models.CASCADE,related_name='poster',default="")
 
+class friend_req(models.Model):
+    req_id = models.IntegerField(primary_key=True)
 
+class map_to_username(models.Model):
+    user_id = models.IntegerField(primary_key=True)
+    uname = models.CharField(max_length=300,default="")
+    
 def create_profile(sender, **kwargs):
     if kwargs['created']:
         user_profile = UserProfile.objects.create(user=kwargs['instance'])

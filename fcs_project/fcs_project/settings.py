@@ -29,6 +29,7 @@ ALLOWED_HOSTS = []
 
 LOGIN_REDIRECT_URL = 'homepage'
 LOGOUT_REDIRECT_URL = 'homepage'
+LOGIN_URL = 'login'
 # Application definition
 
 INSTALLED_APPS = [
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'fcs_project.middleware.LoginRequiredMiddleware'
 ]
 
 ROOT_URLCONF = 'fcs_project.urls'
@@ -105,6 +107,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+LOGIN_EXEMPT_URLS = (
+    'logout/',
+    'signup/',
+    '/'
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/

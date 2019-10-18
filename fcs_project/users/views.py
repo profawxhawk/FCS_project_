@@ -6,8 +6,8 @@ from django.shortcuts import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from .models import posts,User
-from friendship.models import Friend, Follow, Block
+from .models import posts,User, friend_req, posts,map_to_username
+from friendship.models import Friend, Follow, Block,FriendshipRequest
 @login_required
 def logout_view(request):
     logout(request)
@@ -23,10 +23,20 @@ def home(request):
         form = postform()
         post = posts.objects.all().order_by('-created')
         users=User.objects.exclude(id=request.user.id)
-        sent_requests=Friend.objects.sent_requests(user=request.user)
-        print(post)
+        pending_requests = friend_req.objects.raw('select to_user_id from friendship_friendshiprequest a where a.from_user_id = '+str(request.user.id)+'  ;',translations={'to_user_id' : 'req_id'})
+        sent_req = []
+        for obj in pending_requests:
+            sent_req.append(obj.req_id)
+        unread_req = Friend.objects.unrejected_requests(user=request.user)
+        friends = Friend.objects.friends(request.user)
+        friend_id = []
+        for obj in friends:
+            friend_id.append(obj.id)
+        pending_id=[]
+        for obj in unread_req:
+            pending_id.append(obj.from_user_id)
         args = {
-            'form': form, 'posts': post, 'others':users, 'sent':sent_requests
+            'pending_id':pending_id,'form': form, 'posts': post, 'others':users,'sent':sent_req,'pending':unread_req,'friend_id':friend_id,'friend_iter':friends
         }
         return render(request, 'users/homepage.html',args)
     else:
@@ -34,22 +44,92 @@ def home(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.user = request.user
+            post.posted_by=request.user
             post.text=form.cleaned_data['post']
             post.save()
             form = postform()
             return redirect(reverse('homepage'))
         args = {'form': form}
-        return render(request, self.template_name, args)
+        return render(request, 'users/homepage.html',args)
 
 @login_required
 def add_friend(request,pk):
     other_user = User.objects.get(pk=pk)
-    Friend.objects.add_friend(request.user,other_user,message='Hi! I would like to add you') 
+    requests=FriendshipRequest.objects.filter(from_user=request.user, to_user=other_user)
+    if Friend.objects.are_friends(request.user, other_user) == False and not requests: 
+        Friend.objects.add_friend(request.user,other_user,message='Hi! I would like to add you') 
     return redirect(reverse('homepage'))
 
-    
+@login_required
+def accept_request(request,pk):
+    other_user = User.objects.get(pk=pk)
+    requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=request.user)
+    if Friend.objects.are_friends(request.user, other_user) == False and requests: 
+        friend_request = FriendshipRequest.objects.get(from_user=pk,to_user=request.user.id)
+        friend_request.accept()
+    return redirect(reverse('homepage'))
+
+@login_required
+def reject_request(request,pk):
+    other_user = User.objects.get(pk=pk)
+    requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=request.user)
+    if Friend.objects.are_friends(request.user, other_user) == False and requests: 
+        friend_request = FriendshipRequest.objects.get(from_user=pk,to_user=request.user.id)
+        friend_request.cancel()
+    return redirect(reverse('homepage'))
+
+@login_required
+def remove_friend(request,pk):
+    other_user = User.objects.get(pk=pk)
+    if Friend.objects.are_friends(request.user, other_user)==True:
+        Friend.objects.remove_friend(request.user, other_user)
+    return redirect(reverse('homepage'))
+
+
 def welcome(request):
     return render(request, 'users/welcome.html')
+
+@login_required
+def timeline(request,pk):
+    other_user = User.objects.get(pk=pk)
+    if Friend.objects.are_friends(request.user, other_user) == True:
+        post = posts.objects.all().order_by('-created')
+        if other_user.userprofile.privacy==False:
+            if request.method=='GET':
+                form = postform()
+                args = {
+                    'form': form, 'posts': post, 'friend':other_user
+                }
+                return render(request, 'users/timeline.html',args)
+            else:
+                form = postform(request.POST)
+                if form.is_valid():
+                    post = form.save(commit=False)
+                    post.user = other_user
+                    post.posted_by=request.user
+                    post.text=form.cleaned_data['post']
+                    post.save()
+                    form = postform()
+                    return redirect(reverse("Timeline",kwargs={'pk':other_user.pk}))
+        return render(request,'users/timeline.html',{'friend':other_user,'posts': post})
+    return redirect(reverse('homepage'))
+
+
+@login_required
+def view_friend(request,pk):
+    other_user = User.objects.get(pk=pk)
+    if Friend.objects.are_friends(request.user, other_user) == True:
+        username=other_user.username
+        firstname=other_user.first_name
+        lastname=other_user.last_name
+        description=other_user.userprofile.description
+        City=other_user.userprofile.city
+        phone=other_user.userprofile.phone
+        privacy=other_user.userprofile.privacy
+        args={'view':True,'first':firstname,'last':lastname,'desc':description,'city':City,'phone':phone,'privacy':privacy,'username':username,'pk1':other_user.pk}
+        return render(request,'users/profilepage.html',args)
+    else :
+        return redirect(reverse('homepage'))
 
 @login_required
 def profilepage(request):

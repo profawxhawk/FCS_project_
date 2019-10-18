@@ -1,0 +1,23 @@
+{% extends 'users/welcome.html' %}
+{% block  head %}
+<title>Profile page</title>
+{% endblock %}
+{% block body %}
+
+<h1 align="center">Welcome to {{friend.username}}'s Wall</h1>
+<div class="container">
+    <form method="POST">
+    {% csrf_token %}
+    {{form.as_p}}
+    {%if not friend.userprofile.privacy %}
+        <button type="submit">add post</button>
+    {%endif%}
+    {% for post in posts %}
+    {%if post.user_id == friend.id %}
+            <h3>{{ post.text }}</h3>
+            <p>Posted by {{ post.posted_by }} on {{ post.created }}</p>
+    {%endif%}
+    {% endfor %}
+</div>
+<div class="container">
+{% endblock %}
