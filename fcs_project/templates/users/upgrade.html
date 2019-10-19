@@ -13,11 +13,9 @@
 
 	{% block body %}
 	<div class="container">
-	<button class="btn btn-outline-info" type="submit"><a href="{% url 'silver_plan' %}">Silver Plan</a></button>
-	<br><br>
-	
-	<button class="btn btn-outline-info" type="submit"><a href="{% url 'gold_plan' %}">Gold Plan</a></button><br><br>
-	<button class="btn btn-outline-info" type="submit"><a href="{% url 'platinum_plan' %}">Platinum Plan</a></button><br><br>
+		{% for i in plans%}
+	<button class="btn btn-outline-info" type="submit"><a href="{% url i|add:"_plan" %}">{{i}} Plan</a></button><br><br>
+	{%endfor%}
 	</div>
 	{% endblock %}
 

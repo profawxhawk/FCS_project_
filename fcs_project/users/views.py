@@ -133,7 +133,10 @@ def view_friend(request,pk):
 
 @login_required
 def profilepage(request):
-    return render(request,'users/profilepage.html',{'user':request.user})
+    plan=premium_users.objects.values_list('payment_plan', flat=True).filter(user_id=request.user.id)
+    if not plan:
+        plan=["None"]
+    return render(request,'users/profilepage.html',{'user':request.user,'plan':plan})
 
 @login_required
 def editprofile(request):
@@ -183,24 +186,47 @@ def signup(request):
 
 @login_required
 def upgrade(request):
-    return render(request, 'users/upgrade.html')
+    if request.user.premium_user==True:
+        return redirect(reverse('profilepage'))
+    plan=[]
+    if (request.user.account_balance - 50)>=0:
+        plan.append("Silver")
+    if (request.user.account_balance - 100)>=0:
+        plan.append("Gold")
+    if (request.user.account_balance - 150)>=0:
+        plan.append("Platinum")
+    return render(request, 'users/upgrade.html',{'plans':plan})
 
 @login_required
 def silver_plan(request):
-    x = request.user
-    print(x.premium_user)
+    if request.user.premium_user==True:
+        return redirect(reverse('profilepage'))
+    if (request.user.account_balance-50) < 0 :
+        return redirect(reverse('upgrade'))
     return render(request, 'users/silver_plan.html')
 
 @login_required
 def gold_plan(request):
+    if request.user.premium_user==True:
+        return redirect(reverse('profilepage'))
+    if (request.user.account_balance-100) < 0 :
+        return redirect(reverse('upgrade'))
     return render(request, 'users/gold_plan.html')
 
 @login_required
 def platinum_plan(request):
+    if request.user.premium_user==True:
+        return redirect(reverse('profilepage'))
+    if (request.user.account_balance-150) < 0 :
+        return redirect(reverse('upgrade'))
     return render(request, 'users/platinum_plan.html')
 
 @login_required
 def get_silver(request):
+    if request.user.premium_user==True:
+        return redirect(reverse('profilepage'))
+    if (request.user.account_balance-50) < 0 :
+        return redirect(reverse('upgrade'))
     premium = premium_users()
     premium.user = request.user
     premium.save()
@@ -213,6 +239,10 @@ def get_silver(request):
 
 @login_required
 def get_gold(request):
+    if request.user.premium_user==True:
+        return redirect(reverse('profilepage'))
+    if (request.user.account_balance-100) < 0 :
+        return redirect(reverse('upgrade'))
     premium = premium_users()
     premium.user = request.user
     premium.payment_plan = 'Gold'
@@ -226,6 +256,10 @@ def get_gold(request):
 
 @login_required
 def get_platinum(request):
+    if request.user.premium_user==True:
+        return redirect(reverse('profilepage'))
+    if (request.user.account_balance-150) < 0 :
+        return redirect(reverse('upgrade'))
     premium = premium_users()
     premium.user = request.user
     premium.payment_plan = 'platinum'
