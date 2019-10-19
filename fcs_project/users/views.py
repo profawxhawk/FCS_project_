@@ -180,3 +180,48 @@ def signup(request):
     else:
         form = SignUpForm()
     return render(request, 'users/register.html', { 'form' : form })
+
+@login_required
+def upgrade(request):
+    return render(request, 'users/upgrade.html')
+
+@login_required
+def silver_plan(request):
+    x = request.user
+    print(x.premium_user)
+    return render(request, 'users/silver_plan.html')
+
+@login_required
+def gold_plan(request):
+    return render(request, 'users/gold_plan.html')
+
+@login_required
+def platinum_plan(request):
+    return render(request, 'users/platinum_plan.html')
+
+@login_required
+def get_silver(request):
+    cur_user = request.user
+    prev_balance = cur_user.account_balance
+    cur_user.premium_user = True
+    cur_user.account_balance = prev_balance - 50
+    cur_user.save()
+    return render(request, 'users/successful_upgrade.html')
+
+@login_required
+def get_gold(request):
+    cur_user = request.user
+    prev_balance = cur_user.account_balance
+    cur_user.premium_user = True
+    cur_user.account_balance = prev_balance - 100
+    cur_user.save()
+    return render(request, 'users/successful_upgrade.html')
+
+@login_required
+def get_platinum(request):
+    cur_user = request.user
+    prev_balance = cur_user.account_balance
+    cur_user.premium_user = True
+    cur_user.account_balance = prev_balance - 150
+    cur_user.save()
+    return render(request, 'users/successful_upgrade.html')

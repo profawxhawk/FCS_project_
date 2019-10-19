@@ -1,0 +1,37 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+	<title>Welcome!</title>
+</head>
+<body>
+	<h1>Hi</h1>
+	yoyo wassup
+</body>
+</html> -->
+{% extends 'users/welcome.html' %}
+{% block head %}
+<title>Add money</title>
+{% endblock %}
+
+{% block body %}
+<!-- <div class="container">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        {{ form1.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+    <br>
+</div> -->
+<div class = "container">
+<p>
+	{{user.account_balance}}
+	<form action="" method="post">
+		{% csrf_token %}
+		{{ form.as_p }}
+		<button type="submit">Submit</button>
+	</form>
+</p>
+
+</div>
+{% endblock %}
