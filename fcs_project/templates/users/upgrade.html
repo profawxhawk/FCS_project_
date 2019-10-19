@@ -1,0 +1,25 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	{% extends 'users/welcome.html' %}
+	{% block head %}
+	<title>Upgrade</title>
+	{% endblock %}
+
+	{% block body %}
+	<div class="container">
+	<button class="btn btn-outline-info" type="submit"><a href="{% url 'silver_plan' %}">Silver Plan</a></button>
+	<br><br>
+	
+	<button class="btn btn-outline-info" type="submit"><a href="{% url 'gold_plan' %}">Gold Plan</a></button><br><br>
+	<button class="btn btn-outline-info" type="submit"><a href="{% url 'platinum_plan' %}">Platinum Plan</a></button><br><br>
+	</div>
+	{% endblock %}
+
+</body>
+</html>

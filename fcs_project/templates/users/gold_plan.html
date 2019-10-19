@@ -1,0 +1,28 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	{% extends 'users/welcome.html' %}
+	{% block head %}
+	<title>Upgrade</title>
+	{% endblock %}
+
+	{% block body %}
+	<div class="container">
+	Gold Plan<br><br>
+	Current account balance: {{user.account_balance}}<br><br>
+	{{user.premium_user}}<br><br>
+	Balance after payment: {{ user.account_balance|add:"-100" }}<br><br>
+	{% if not user.premium_user %}
+	<button class="btn btn-outline-info" type="submit"><a href="{% url 'get_gold' %}">Proceed with payment</a></button>
+	{% endif %}
+	<br><br>
+	</div>
+	{% endblock %}
+
+</body>
+</html>

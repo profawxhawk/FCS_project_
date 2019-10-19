@@ -33,5 +33,8 @@ def create_profile(sender, **kwargs):
     if kwargs['created']:
         user_profile = UserProfile.objects.create(user=kwargs['instance'])
        
+class premium_users(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    payment_plan = models.CharField(max_length=30,default="Silver")
 
 post_save.connect(create_profile, sender=User)
