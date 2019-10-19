@@ -6,7 +6,7 @@ from django.shortcuts import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from .models import posts,User, friend_req, posts,map_to_username
+from .models import posts,User, friend_req, posts,map_to_username,premium_users
 from friendship.models import Friend, Follow, Block,FriendshipRequest
 @login_required
 def logout_view(request):
@@ -180,3 +180,59 @@ def signup(request):
     else:
         form = SignUpForm()
     return render(request, 'users/register.html', { 'form' : form })
+
+@login_required
+def upgrade(request):
+    return render(request, 'users/upgrade.html')
+
+@login_required
+def silver_plan(request):
+    x = request.user
+    print(x.premium_user)
+    return render(request, 'users/silver_plan.html')
+
+@login_required
+def gold_plan(request):
+    return render(request, 'users/gold_plan.html')
+
+@login_required
+def platinum_plan(request):
+    return render(request, 'users/platinum_plan.html')
+
+@login_required
+def get_silver(request):
+    premium = premium_users()
+    premium.user = request.user
+    premium.save()
+    cur_user = request.user
+    prev_balance = cur_user.account_balance
+    cur_user.premium_user = True
+    cur_user.account_balance = prev_balance - 50
+    cur_user.save()
+    return render(request, 'users/successful_upgrade.html')
+
+@login_required
+def get_gold(request):
+    premium = premium_users()
+    premium.user = request.user
+    premium.payment_plan = 'Gold'
+    premium.save()
+    cur_user = request.user
+    prev_balance = cur_user.account_balance
+    cur_user.premium_user = True
+    cur_user.account_balance = prev_balance - 100
+    cur_user.save()
+    return render(request, 'users/successful_upgrade.html')
+
+@login_required
+def get_platinum(request):
+    premium = premium_users()
+    premium.user = request.user
+    premium.payment_plan = 'platinum'
+    premium.save()
+    cur_user = request.user
+    prev_balance = cur_user.account_balance
+    cur_user.premium_user = True
+    cur_user.account_balance = prev_balance - 150
+    cur_user.save()
+    return render(request, 'users/successful_upgrade.html')
