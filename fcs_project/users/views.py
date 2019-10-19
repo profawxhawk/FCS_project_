@@ -201,7 +201,8 @@ def platinum_plan(request):
 
 @login_required
 def get_silver(request):
-    premium = premium_users(request.user,'silver')
+    premium = premium_users()
+    premium.user = request.user
     premium.save()
     cur_user = request.user
     prev_balance = cur_user.account_balance
@@ -212,7 +213,9 @@ def get_silver(request):
 
 @login_required
 def get_gold(request):
-    premium = premium_users(request.user,'Gold')
+    premium = premium_users()
+    premium.user = request.user
+    premium.payment_plan = 'Gold'
     premium.save()
     cur_user = request.user
     prev_balance = cur_user.account_balance
@@ -223,7 +226,9 @@ def get_gold(request):
 
 @login_required
 def get_platinum(request):
-    premium = premium_users(request.user,'Platinum')
+    premium = premium_users()
+    premium.user = request.user
+    premium.payment_plan = 'platinum'
     premium.save()
     cur_user = request.user
     prev_balance = cur_user.account_balance
