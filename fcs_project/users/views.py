@@ -6,7 +6,7 @@ from django.shortcuts import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from .models import posts,User, friend_req, posts,map_to_username
+from .models import posts,User, friend_req, posts,map_to_username,premium_users
 from friendship.models import Friend, Follow, Block,FriendshipRequest
 @login_required
 def logout_view(request):
@@ -201,6 +201,8 @@ def platinum_plan(request):
 
 @login_required
 def get_silver(request):
+    premium = premium_users(request.user,'silver')
+    premium.save()
     cur_user = request.user
     prev_balance = cur_user.account_balance
     cur_user.premium_user = True
@@ -210,6 +212,8 @@ def get_silver(request):
 
 @login_required
 def get_gold(request):
+    premium = premium_users(request.user,'Gold')
+    premium.save()
     cur_user = request.user
     prev_balance = cur_user.account_balance
     cur_user.premium_user = True
@@ -219,6 +223,8 @@ def get_gold(request):
 
 @login_required
 def get_platinum(request):
+    premium = premium_users(request.user,'Platinum')
+    premium.save()
     cur_user = request.user
     prev_balance = cur_user.account_balance
     cur_user.premium_user = True
