@@ -1,0 +1,15 @@
+{% extends 'users/welcome.html' %}
+{% block body %}
+
+ 
+    <div class="container"onload="load()" >
+        <h3>Use Google Authenticator App to get OTP. Please do not skip this step ... your account will be locked forever otherwise</h3>
+        <form method="POST">
+        {% csrf_token %}
+        <img src={{otpstring}} width="200"
+        height="200"><br><br>
+        {{form.as_p}}
+            <button class="btn btn-outline-info" type="submit">Login</button>
+        </form>
+    </div>
+{% endblock %}

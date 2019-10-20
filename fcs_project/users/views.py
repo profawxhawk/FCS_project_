@@ -4,20 +4,30 @@ from django.urls import reverse
 from .forms import SignUpForm,EditProfileForm,EditProfileFormextend,postform
 from django.shortcuts import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from django_otp.decorators import otp_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from .models import posts,User, friend_req, posts,map_to_username,premium_users
 from friendship.models import Friend, Follow, Block,FriendshipRequest
+from django_otp import devices_for_user
+from functools import partial
+from .forms import SimpleOTPAuthenticationForm,SimpleOTPRegistrationForm
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp.oath import TOTP
+from django_otp.util import random_hex
+from django_otp.forms import OTPTokenForm
+from django.contrib.auth import views as auth_views
+import requests
 @login_required
 def logout_view(request):
     logout(request)
     return redirect('/') 
 
-@login_required
+@otp_required
 def options(request):
     return render(request, 'users/options.html')
 
-@login_required
+@otp_required
 def home(request):
     if request.method=='GET':
         form = postform()
@@ -52,7 +62,7 @@ def home(request):
         args = {'form': form}
         return render(request, 'users/homepage.html',args)
 
-@login_required
+@otp_required
 def add_friend(request,pk):
     other_user = User.objects.get(pk=pk)
     requests=FriendshipRequest.objects.filter(from_user=request.user, to_user=other_user)
@@ -60,7 +70,7 @@ def add_friend(request,pk):
         Friend.objects.add_friend(request.user,other_user,message='Hi! I would like to add you') 
     return redirect(reverse('homepage'))
 
-@login_required
+@otp_required
 def accept_request(request,pk):
     other_user = User.objects.get(pk=pk)
     requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=request.user)
@@ -69,7 +79,7 @@ def accept_request(request,pk):
         friend_request.accept()
     return redirect(reverse('homepage'))
 
-@login_required
+@otp_required
 def reject_request(request,pk):
     other_user = User.objects.get(pk=pk)
     requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=request.user)
@@ -78,7 +88,7 @@ def reject_request(request,pk):
         friend_request.cancel()
     return redirect(reverse('homepage'))
 
-@login_required
+@otp_required
 def remove_friend(request,pk):
     other_user = User.objects.get(pk=pk)
     if Friend.objects.are_friends(request.user, other_user)==True:
@@ -89,7 +99,7 @@ def remove_friend(request,pk):
 def welcome(request):
     return render(request, 'users/welcome.html')
 
-@login_required
+@otp_required
 def timeline(request,pk):
     other_user = User.objects.get(pk=pk)
     if Friend.objects.are_friends(request.user, other_user) == True:
@@ -115,7 +125,7 @@ def timeline(request,pk):
     return redirect(reverse('homepage'))
 
 
-@login_required
+@otp_required
 def view_friend(request,pk):
     other_user = User.objects.get(pk=pk)
     if Friend.objects.are_friends(request.user, other_user) == True:
@@ -131,14 +141,14 @@ def view_friend(request,pk):
     else :
         return redirect(reverse('homepage'))
 
-@login_required
+@otp_required
 def profilepage(request):
     plan=premium_users.objects.values_list('payment_plan', flat=True).filter(user_id=request.user.id)
     if not plan:
         plan=["None"]
     return render(request,'users/profilepage.html',{'user':request.user,'plan':plan})
 
-@login_required
+@otp_required
 def editprofile(request):
     if request.method == 'POST':
         form = EditProfileForm(request.POST, instance=request.user)
@@ -154,7 +164,7 @@ def editprofile(request):
         args = {'form': form,'form1': form1}
         return render(request, 'users/edit_profile.html', args)
 
-@login_required
+@otp_required
 def changepass(request):
     if request.method == 'POST':
         form = PasswordChangeForm(data=request.POST, user=request.user)
@@ -170,21 +180,51 @@ def changepass(request):
         args = {'form': form }
         return render(request, 'users/change_password.html', args)
 
+
+@login_required
+def otpsetup(request):
+    if request.user.is_verified()==True:
+        return redirect(reverse('homepage'))
+
+    totp=TOTPDevice.objects.get(user_id=request.user.id)
+    form_cls = partial(SimpleOTPRegistrationForm, request.user)
+    temp=totp.config_url.replace("/", "%2F")
+    print(temp)
+    return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp)})(request)
+# @login_required
+# def otpsetup(request):
+#     totp=TOTPDevice.objects.get(user_id=request.user.id)
+#     # if request.method == 'POST':
+#     return auth_views.LoginView.as_view(authentication_form=SimpleOTPRegistrationForm,template_name='users/otp_setup.html',extra_context={'otpstring':"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(totp.config_url)})(request)
+#     #     print(form['otp_token'].value())
+#     #     if form.is_valid():
+#     #         print(form)
+#     #         user = authenticate(username=user.username, password=raw_password)
+#     #         login(request, user)
+#     #         return HttpResponseRedirect(reverse('homepage'))
+#     # else:
+#     #     form = SimpleOTPRegistrationForm(request.user)
+#     # return render(request, 'users/otp_setup.html', { 'form' : form ,'otpstring':"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(totp.config_url)})
+
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save()
             user.save()
+            totp=TOTPDevice()
+            totp.user=user
+            totp.name=user.username
+            totp.save()
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=user.username, password=raw_password)
             login(request, user)
-            return HttpResponseRedirect(reverse('homepage'))
+            return HttpResponseRedirect(reverse('otpsetup'))
     else:
         form = SignUpForm()
     return render(request, 'users/register.html', { 'form' : form })
 
-@login_required
+@otp_required
 def upgrade(request):
     if request.user.premium_user==True:
         return redirect(reverse('profilepage'))
@@ -197,7 +237,7 @@ def upgrade(request):
         plan.append("Platinum")
     return render(request, 'users/upgrade.html',{'plans':plan})
 
-@login_required
+@otp_required
 def silver_plan(request):
     if request.user.premium_user==True:
         return redirect(reverse('profilepage'))
@@ -205,7 +245,7 @@ def silver_plan(request):
         return redirect(reverse('upgrade'))
     return render(request, 'users/silver_plan.html')
 
-@login_required
+@otp_required
 def gold_plan(request):
     if request.user.premium_user==True:
         return redirect(reverse('profilepage'))
@@ -213,7 +253,7 @@ def gold_plan(request):
         return redirect(reverse('upgrade'))
     return render(request, 'users/gold_plan.html')
 
-@login_required
+@otp_required
 def platinum_plan(request):
     if request.user.premium_user==True:
         return redirect(reverse('profilepage'))
@@ -221,7 +261,7 @@ def platinum_plan(request):
         return redirect(reverse('upgrade'))
     return render(request, 'users/platinum_plan.html')
 
-@login_required
+@otp_required
 def get_silver(request):
     if request.user.premium_user==True:
         return redirect(reverse('profilepage'))
@@ -237,7 +277,7 @@ def get_silver(request):
     cur_user.save()
     return render(request, 'users/successful_upgrade.html')
 
-@login_required
+@otp_required
 def get_gold(request):
     if request.user.premium_user==True:
         return redirect(reverse('profilepage'))
@@ -254,7 +294,7 @@ def get_gold(request):
     cur_user.save()
     return render(request, 'users/successful_upgrade.html')
 
-@login_required
+@otp_required
 def get_platinum(request):
     if request.user.premium_user==True:
         return redirect(reverse('profilepage'))
@@ -271,7 +311,7 @@ def get_platinum(request):
     cur_user.save()
     return render(request, 'users/successful_upgrade.html')
 
-@login_required
+@otp_required
 def cancel_plan(request):
     if request.user.premium_user==False:
         return redirect(reverse('profilepage'))

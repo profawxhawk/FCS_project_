@@ -16,10 +16,20 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
-
+from django_otp.forms import OTPAuthenticationForm
+from users.forms import SimpleOTPAuthenticationForm
 from users import views as user_views
+from django.contrib.auth.models import User
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp.admin import OTPAdminSite
+class OTPAdmin(OTPAdminSite):
+    pass
 
+admin_site=OTPAdmin(name='OTPAdmin')
+admin_site.register(User)
+admin_site.register(TOTPDevice)
 urlpatterns = [
+    path('otp_setup/',user_views.otpsetup,name='otpsetup'),
     path('cancel_plan/',user_views.cancel_plan,name='cancel_plan'),
     path('view_friend/(?P<pk>\d+)',user_views.view_friend,name='view_friend'),
     path('add_friend/(?P<pk>\d+)',user_views.add_friend,name='add_friend'),
@@ -39,10 +49,11 @@ urlpatterns = [
     path('',user_views.welcome, name='home'),
     path('/',user_views.welcome, name='home'),
     path('timeline/(?P<pk>\d+)',user_views.timeline,name='Timeline'),
-    path('login/', auth_views.LoginView.as_view(template_name='users/login.html'), name='login'),
+    path('login/', auth_views.LoginView.as_view(authentication_form=SimpleOTPAuthenticationForm,template_name='users/login.html'), name='login'),
     path('logout/', user_views.logout_view, name='logout'),
     path('signup/', user_views.signup, name='signup'),
     path('admin/', admin.site.urls),
+    path('adminotp/', admin_site.urls),
     path('accept_request/(?P<pk>\d+)',user_views.accept_request,name='accept_request'),
     path('reject_request/(?P<pk>\d+)',user_views.reject_request,name='reject_request'),
     path('remove_friend/(?P<pk>\d+)',user_views.remove_friend,name='remove_friend')
