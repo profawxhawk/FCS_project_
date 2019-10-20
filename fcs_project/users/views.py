@@ -270,3 +270,13 @@ def get_platinum(request):
     cur_user.account_balance = prev_balance - 150
     cur_user.save()
     return render(request, 'users/successful_upgrade.html')
+
+@login_required
+def cancel_plan(request):
+    if request.user.premium_user==False:
+        return redirect(reverse('profilepage'))
+    premium_users.objects.filter(user=request.user).delete()
+    cur_user = request.user
+    cur_user.premium_user = False
+    cur_user.save()
+    return render(request, 'users/cancel_plan.html') 

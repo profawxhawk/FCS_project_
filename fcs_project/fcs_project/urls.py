@@ -20,6 +20,7 @@ from django.contrib.auth import views as auth_views
 from users import views as user_views
 
 urlpatterns = [
+    path('cancel_plan/',user_views.cancel_plan,name='cancel_plan'),
     path('view_friend/(?P<pk>\d+)',user_views.view_friend,name='view_friend'),
     path('add_friend/(?P<pk>\d+)',user_views.add_friend,name='add_friend'),
     path('change_password/',user_views.changepass,name='change_password'),
