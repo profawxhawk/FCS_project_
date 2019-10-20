@@ -14,5 +14,8 @@
 {% if not user.premium_user %}
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'upgrade' %}">Upgrade</a></button>
 {% endif %}
+{% if user.premium_user %}
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'cancel_plan' %}">Cancel current Plan</a></button>
+{% endif %}
 </div>
 {% endblock %}
