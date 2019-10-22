@@ -37,4 +37,10 @@ class premium_users(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,unique=True)
     payment_plan = models.CharField(max_length=30,default="Silver")
 
+class transactions(models.Model):
+    # transaction_id = models.IntegerField(primary_key=True)
+    from_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='sending_from')
+    to_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='sending_to')
+    amount = models.FloatField(default=0.0)
+
 post_save.connect(create_profile, sender=User)

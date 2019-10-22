@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
 from django.contrib.auth import views as auth_views
 from django_otp.forms import OTPAuthenticationForm
 from users.forms import SimpleOTPAuthenticationForm
@@ -22,6 +22,7 @@ from users import views as user_views
 from django.contrib.auth.models import User
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.admin import OTPAdminSite
+from chat import views as chat_views
 class OTPAdmin(OTPAdminSite):
     pass
 
@@ -40,6 +41,8 @@ urlpatterns = [
     path('get_silver/',user_views.get_silver,name='get_silver'),
     path('get_gold/',user_views.get_gold,name='get_gold'),
     path('get_platinum/',user_views.get_platinum,name='get_platinum'),
+    path('do_transactions/(?P<pk>\d+)',user_views.do_transactions,name='do_transactions'),
+    path('transactions/',user_views.transaction_occur,name='transactions'),
     path('platinum_plan/',user_views.platinum_plan,name='Platinum_plan'),
     path('editprofile/',user_views.editprofile,name='editprofile'),
     path('profilepage/',user_views.profilepage,name='profilepage'),
@@ -50,11 +53,14 @@ urlpatterns = [
     path('/',user_views.welcome, name='home'),
     path('timeline/(?P<pk>\d+)',user_views.timeline,name='Timeline'),
     path('login/', auth_views.LoginView.as_view(authentication_form=SimpleOTPAuthenticationForm,template_name='users/login.html'), name='login'),
+    path('accept_money/(?P<pk>\d+)',user_views.accept_money,name='accept_money'),
+    path('reject_money/(?P<pk>\d+)',user_views.reject_money,name='reject_money'),
     path('logout/', user_views.logout_view, name='logout'),
     path('signup/', user_views.signup, name='signup'),
     path('admin/', admin.site.urls),
     path('adminotp/', admin_site.urls),
     path('accept_request/(?P<pk>\d+)',user_views.accept_request,name='accept_request'),
     path('reject_request/(?P<pk>\d+)',user_views.reject_request,name='reject_request'),
-    path('remove_friend/(?P<pk>\d+)',user_views.remove_friend,name='remove_friend')
+    path('remove_friend/(?P<pk>\d+)',user_views.remove_friend,name='remove_friend'),
+    path('room/(?P<pk>\d+)',chat_views.room,name='room'),
 ]
