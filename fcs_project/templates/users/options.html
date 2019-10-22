@@ -7,8 +7,7 @@
 <div class="container">
 <button class="btn btn-outline-info" type="submit">Add money to wallet</button>
 <br><br>
-<button class="btn btn-outline-info" type="submit">send money</button><br><br>
-<button class="btn btn-outline-info" type="submit">view money requests</button><br><br>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'transactions' %}">Transactions</a></button><br><br>
 <button class="btn btn-outline-info" type="submit">See groups</button><br><br>
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'change_password' %}">Change Password</a></button><br><br>
 {% if not user.premium_user %}

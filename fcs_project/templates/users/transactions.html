@@ -1,0 +1,28 @@
+{% extends 'users/welcome.html' %}
+{% block body %}
+<div class="container">
+<h1>Send money</h1>
+    {% for x in friend_iter %}
+    <h3><a href="{% url 'view_friend' pk=x.pk %}">{{ x.username }}</a><button class="btn btn-outline-info" type="submit"><a href="{% url 'do_transactions' pk=x.pk %}">Send Money</a></button></h3>
+    {% endfor %}
+</div>
+<!-- <div class="container">
+    {% for other in others %} {% if other.id not in friend_id %} {% if other.id in sent %}
+    <h3>{{ other.username }} <button class="btn btn-outline-info" type="submit">Sent</button></h3>
+    {% else %}
+    {% if other.id not in pending_id %}
+    <h3>{{ other.username }} <button class="btn btn-outline-info" type="submit"><a href="{% url 'add_friend' pk=other.pk %}">Add Friend</a></button></h3>
+    {% endif %} {% endif %} {% endif %} {% endfor %}
+</div> -->
+
+<div class="container">
+    <h1>Pending Requests</h1>
+    {% for x in pending %}
+    <h3>{{ x.from_user }} <button class="btn btn-outline-info" type="submit"><a href="{% url 'accept_money' pk=x.pk %}">Accept</a></button>
+        <button class="btn btn-outline-info" type="submit"><a href="{% url 'reject_money' pk=x.pk %}">Reject</a></button></h3>
+    {% endfor %}
+
+</div>
+
+
+{% endblock %}
