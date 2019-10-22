@@ -1,7 +1,7 @@
 
 {% extends 'users/welcome.html' %}
 {% block body %}
-<div class="content-section">
+<div class="container">
         <form method="POST">
             {% csrf_token %}
             {{form.as_p}}
