@@ -15,12 +15,15 @@
 
 </div>
 <div class="container">
+        {% if friend_iter %}
 <h1>Friends List</h1>
     {% for x in friend_iter %}
-    <h3><a href="{% url 'view_friend' pk=x.pk %}">{{ x.username }}</a><button class="btn btn-outline-info" type="submit"><a href="{% url 'remove_friend' pk=x.pk %}">Remove friend</a></button><button class="btn btn-outline-info" type="submit"><a href="{% url 'room' pk=x.pk %}">Chat</a></button></h3>
+    <h3><a href="{% url 'view_friend' pk=x.pk %}">{{ x.username }} </a><button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'remove_friend' pk=x.pk %}">Remove friend</a></button><button class="btn btn-outline-info" type="submit"><a href="{% url 'room' pk=x.pk %}">Chat</a></button></h3>
     {% endfor %}
+    {% endif %}
 </div>
 <div class="container">
+        {% if others %}
     <h1>Suggested friends</h1>
     {% for other in others %} {% if other.id not in friend_id %} {% if other.id in sent %}
     <h3>{{ other.username }} <button class="btn btn-outline-info" type="submit">Sent</button></h3>
@@ -28,15 +31,18 @@
     {% if other.id not in pending_id %}
     <h3>{{ other.username }} <button class="btn btn-outline-info" type="submit"><a href="{% url 'add_friend' pk=other.pk %}">Add Friend</a></button></h3>
     {% endif %} {% endif %} {% endif %} {% endfor %}
+    {% endif %}
 </div>
 
 
 <div class="container">
+    {% if pending %}
     <h1>Pending Requests</h1>
     {% for x in pending %}
     <h3>{{ x.from_user }} <button class="btn btn-outline-info" type="submit"><a href="{% url 'accept_request' pk=x.from_user.pk %}">Accept</a></button>
         <button class="btn btn-outline-info" type="submit"><a href="{% url 'reject_request' pk=x.from_user.pk %}">Reject</a></button></h3>
-    {% endfor %}
+        {% endfor %}
+        {% endif %}
 
 </div>
 
