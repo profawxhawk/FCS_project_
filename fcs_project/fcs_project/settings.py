@@ -40,10 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
+    'channels',
     'friendship',
     'django_otp',
     'django_otp.plugins.otp_totp',
-    'django_otp.plugins.otp_static'
+    'django_otp.plugins.otp_static',
+    'chat',
 ]
 AUTH_USER_MODEL = 'users.User'
 MIDDLEWARE = [
@@ -77,18 +79,27 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'fcs_project.wsgi.application'
+ASGI_APPLICATION = "fcs_project.routing.application"
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', 
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'fcs_proj',
         'USER': 'bharath',
         'PASSWORD': 'root',
-        'HOST': '127.0.0.1',   
+        'HOST': '127.0.0.1',
         'PORT': '3306',
     }
 }
@@ -135,3 +146,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]

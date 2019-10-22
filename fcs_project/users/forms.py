@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
-from .models import User,UserProfile,posts
+from .models import User,UserProfile,posts,transactions
 from django_otp.forms import OTPAuthenticationForm,OTPTokenForm
 from django import forms
 
@@ -52,3 +52,8 @@ class EditProfileFormextend(UserChangeForm):
             'phone',
             'privacy',
         )
+
+class get_transaction_amount(forms.ModelForm):
+    class Meta:
+        model = transactions
+        fields = ('amount',)

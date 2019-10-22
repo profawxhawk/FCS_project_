@@ -1,13 +1,13 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate,logout
 from django.urls import reverse
-from .forms import SignUpForm,EditProfileForm,EditProfileFormextend,postform
+from .forms import SignUpForm,EditProfileForm,get_transaction_amount,EditProfileFormextend,postform
 from django.shortcuts import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django_otp.decorators import otp_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from .models import posts,User, friend_req, posts,map_to_username,premium_users
+from .models import posts,User, friend_req, posts,map_to_username,premium_users,transactions
 from friendship.models import Friend, Follow, Block,FriendshipRequest
 from django_otp import devices_for_user
 from functools import partial
@@ -61,6 +61,62 @@ def home(request):
             return redirect(reverse('homepage'))
         args = {'form': form}
         return render(request, 'users/homepage.html',args)
+
+@login_required
+def transaction_occur(request):
+    friends = Friend.objects.friends(request.user)
+    friend_id = []
+    for obj in friends:
+        friend_id.append(obj.id)
+    transactions_pending = transactions.objects.filter(to_user=request.user)
+    args = {
+        'friend_id':friend_id,'friend_iter':friends,'pending':transactions_pending
+    }
+    return render(request, 'users/transactions.html',args)
+
+@login_required
+def do_transactions(request,pk):
+
+    if request.method == 'POST':
+        # transaction_req = transactions()
+        form = get_transaction_amount(request.POST)
+        if form.is_valid():
+            other_user = User.objects.get(pk=pk)
+            transaction_req = form.save(commit=False)
+            transaction_req.from_user = request.user
+            transaction_req.to_user = other_user
+            t_amount = form['amount'].value()
+            if float(t_amount) > request.user.account_balance:
+                return redirect(reverse('profilepage'))
+            request.user.account_balance = request.user.account_balance - float(t_amount)
+            transaction_req.save()
+            request.user.save()
+            return redirect(reverse('profilepage'))
+    else:
+        form = get_transaction_amount(instance=request.user)
+        args = {'form': form}
+        return render(request, 'users/do_transactions.html', args)
+
+@login_required
+def accept_money(request,pk):
+    # print("\n\n",pk,"\n\n")
+    transaction_req = transactions.objects.get(pk=pk)
+    # print("\n\n",transaction_req.from_user.username,"\n\n")
+    cur_user = request.user
+    cur_user.account_balance = cur_user.account_balance + transaction_req.amount
+    cur_user.save()
+    transaction_req.delete()
+    return redirect(reverse('homepage'))
+
+@login_required
+def reject_money(request,pk):
+    print("\n\n",pk,"\n\n")
+    transaction_req = transactions.objects.get(pk=pk)
+    cur_user = transaction_req.from_user
+    cur_user.account_balance = cur_user.account_balance + transaction_req.amount
+    cur_user.save()
+    transaction_req.delete()
+    return redirect(reverse('homepage'))
 
 @otp_required
 def add_friend(request,pk):
