@@ -11,12 +11,15 @@ from .models import posts,User, friend_req, posts,map_to_username,premium_users,
 from friendship.models import Friend, Follow, Block,FriendshipRequest
 from django_otp import devices_for_user
 from functools import partial
-from .forms import SimpleOTPAuthenticationForm,SimpleOTPRegistrationForm
+from .forms import SimpleOTPAuthenticationForm,SimpleOTPRegistrationForm,otpform
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.oath import TOTP
 from django_otp.util import random_hex
 from django_otp.forms import OTPTokenForm
+from django_otp import match_token
+from django.forms.utils import ErrorList
 from django.contrib.auth import views as auth_views
+
 import requests
 @login_required
 def logout_view(request):
@@ -29,6 +32,8 @@ def options(request):
 
 @otp_required
 def home(request):
+    request.session['reverify']=None
+    print(request.session['reverify'])
     if request.method=='GET':
         form = postform()
         post = posts.objects.all().order_by('-created')
@@ -153,6 +158,7 @@ def remove_friend(request,pk):
 
 
 def welcome(request):
+    request.session['reverify']=None
     return render(request, 'users/welcome.html')
 
 @otp_required
@@ -318,54 +324,90 @@ def platinum_plan(request):
     return render(request, 'users/platinum_plan.html')
 
 @otp_required
+def reverify(request,plan):
+    request.session['reverify']=None
+    if not request.session['reverify']:
+        totp=TOTPDevice.objects.get(user_id=request.user.id)
+        form = otpform(request.POST)
+        temp=totp.config_url.replace("/", "%2F")
+        if request.method == 'POST':   
+            if form.is_valid():
+                otp_token=form.cleaned_data['otp_token']
+                result=match_token(request.user,otp_token)
+                if not result:
+                    errors = form._errors.setdefault("Incorrect OTP", ErrorList())   
+                    print(form.errors)
+                    return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan})
+                request.session['reverify']=1
+                return HttpResponseRedirect(reverse(plan))
+        else:
+            return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan})
+    else:
+        return redirect(reverse('homepage'))
+    # return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True})(request)
+
+@otp_required
 def get_silver(request):
-    if request.user.premium_user==True:
-        return redirect(reverse('profilepage'))
-    if (request.user.account_balance-50) < 0 :
-        return redirect(reverse('upgrade'))
-    premium = premium_users()
-    premium.user = request.user
-    premium.save()
-    cur_user = request.user
-    prev_balance = cur_user.account_balance
-    cur_user.premium_user = True
-    cur_user.account_balance = prev_balance - 50
-    cur_user.save()
-    return render(request, 'users/successful_upgrade.html')
+    if request.session['reverify']==1:
+        if request.user.premium_user==True:
+            return redirect(reverse('profilepage'))
+        if (request.user.account_balance-50) < 0 :
+            return redirect(reverse('upgrade'))
+        premium = premium_users()
+        premium.user = request.user
+        premium.payment_plan = 'Silver'
+        premium.save()
+        cur_user = request.user
+        prev_balance = cur_user.account_balance
+        cur_user.premium_user = True
+        cur_user.account_balance = prev_balance - 50
+        cur_user.save()
+        request.session['reverify']=None
+        return render(request, 'users/successful_upgrade.html')
+    else:
+        return redirect(reverse('homepage'))
 
 @otp_required
 def get_gold(request):
-    if request.user.premium_user==True:
-        return redirect(reverse('profilepage'))
-    if (request.user.account_balance-100) < 0 :
-        return redirect(reverse('upgrade'))
-    premium = premium_users()
-    premium.user = request.user
-    premium.payment_plan = 'Gold'
-    premium.save()
-    cur_user = request.user
-    prev_balance = cur_user.account_balance
-    cur_user.premium_user = True
-    cur_user.account_balance = prev_balance - 100
-    cur_user.save()
-    return render(request, 'users/successful_upgrade.html')
+    if request.session['reverify']==1:
+        if request.user.premium_user==True:
+            return redirect(reverse('profilepage'))
+        if (request.user.account_balance-100) < 0 :
+            return redirect(reverse('upgrade'))
+        premium = premium_users()
+        premium.user = request.user
+        premium.payment_plan = 'Gold'
+        premium.save()
+        cur_user = request.user
+        prev_balance = cur_user.account_balance
+        cur_user.premium_user = True
+        cur_user.account_balance = prev_balance - 100
+        cur_user.save()
+        request.session['reverify']=None
+        return render(request, 'users/successful_upgrade.html')
+    else:
+        return redirect(reverse('homepage'))
 
 @otp_required
 def get_platinum(request):
-    if request.user.premium_user==True:
-        return redirect(reverse('profilepage'))
-    if (request.user.account_balance-150) < 0 :
-        return redirect(reverse('upgrade'))
-    premium = premium_users()
-    premium.user = request.user
-    premium.payment_plan = 'platinum'
-    premium.save()
-    cur_user = request.user
-    prev_balance = cur_user.account_balance
-    cur_user.premium_user = True
-    cur_user.account_balance = prev_balance - 150
-    cur_user.save()
-    return render(request, 'users/successful_upgrade.html')
+    if request.session['reverify']==1:
+        if request.user.premium_user==True:
+            return redirect(reverse('profilepage'))
+        if (request.user.account_balance-150) < 0 :
+            return redirect(reverse('upgrade'))
+        premium = premium_users()
+        premium.user = request.user
+        premium.payment_plan = 'Platinum'
+        premium.save()
+        cur_user = request.user
+        prev_balance = cur_user.account_balance
+        cur_user.premium_user = True
+        cur_user.account_balance = prev_balance - 150
+        cur_user.save()
+        return render(request, 'users/successful_upgrade.html')
+    else:
+        return redirect(reverse('homepage'))
+    
 
 @otp_required
 def cancel_plan(request):

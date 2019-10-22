@@ -57,6 +57,7 @@ urlpatterns = [
     path('reject_money/(?P<pk>\d+)',user_views.reject_money,name='reject_money'),
     path('logout/', user_views.logout_view, name='logout'),
     path('signup/', user_views.signup, name='signup'),
+    path('reverify(?P<plan>[^/]+)/', user_views.reverify, name='otp_reverify'),
     path('admin/', admin.site.urls),
     path('adminotp/', admin_site.urls),
     path('accept_request/(?P<pk>\d+)',user_views.accept_request,name='accept_request'),

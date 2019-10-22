@@ -9,6 +9,8 @@ class SimpleOTPRegistrationForm(OTPTokenForm):
     otp_device = forms.CharField(required=False, widget=forms.HiddenInput)
     otp_challenge = forms.CharField(required=False, widget=forms.HiddenInput)
 
+class otpform(forms.Form):
+    otp_token=forms.CharField(required=False)
 
 class SimpleOTPAuthenticationForm(OTPAuthenticationForm):
     otp_device = forms.CharField(required=False, widget=forms.HiddenInput)

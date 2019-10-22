@@ -3,13 +3,20 @@
 
  
     <div class="container"onload="load()" >
+        {%if not verification%}
         <h3>Use Google Authenticator App to get OTP. Please do not skip this step ... your account will be locked forever otherwise</h3>
+        {% endif %}
         <form method="POST">
+        <div class="form-row"> {{ form.errors }} </div>
         {% csrf_token %}
         <img src={{otpstring}} width="200"
         height="200"><br><br>
         {{form.as_p}}
+        {%if not verification%}
             <button class="btn btn-outline-info" type="submit">Login</button>
+            {% else %}
+            <button class="btn btn-outline-info" type="submit">Verify</button>
+            {% endif %}
         </form>
     </div>
 {% endblock %}
