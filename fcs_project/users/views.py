@@ -67,7 +67,7 @@ def home(request):
         args = {'form': form}
         return render(request, 'users/homepage.html',args)
 
-@login_required
+@otp_required
 def transaction_occur(request):
     friends = Friend.objects.friends(request.user)
     friend_id = []
@@ -79,41 +79,50 @@ def transaction_occur(request):
     }
     return render(request, 'users/transactions.html',args)
 
-@login_required
-def do_transactions(request,pk):
+@otp_required
+def do_transactions(request,pk=None):
 
     if request.method == 'POST':
         # transaction_req = transactions()
         form = get_transaction_amount(request.POST)
         if form.is_valid():
-            other_user = User.objects.get(pk=pk)
-            transaction_req = form.save(commit=False)
-            transaction_req.from_user = request.user
-            transaction_req.to_user = other_user
             t_amount = form['amount'].value()
-            if float(t_amount) > request.user.account_balance:
+            request.session['amount']=t_amount
+            if float(t_amount) > request.user.account_balance or float(t_amount)<0:
                 return redirect(reverse('profilepage'))
-            request.user.account_balance = request.user.account_balance - float(t_amount)
-            transaction_req.save()
-            request.user.save()
-            return redirect(reverse('profilepage'))
+            return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_transactions','pk':pk}))
+           
     else:
         form = get_transaction_amount(instance=request.user)
         args = {'form': form}
         return render(request, 'users/do_transactions.html', args)
 
-@login_required
+@otp_required
+def confirm_transactions(request,pk):
+    if request.session['reverify']==1:
+        other_user = User.objects.get(pk=pk)
+        transaction_req = transactions()
+        transaction_req.from_user = request.user
+        transaction_req.to_user = other_user
+        transaction_req.amount = float(request.session['amount'])
+        request.user.account_balance = request.user.account_balance - float(request.session['amount'])
+        request.session['amount']=0
+        transaction_req.save()
+        request.user.save()
+        return redirect(reverse('profilepage'))
+    else:
+        return redirect(reverse('profilepage'))
+
+@otp_required
 def accept_money(request,pk):
-    # print("\n\n",pk,"\n\n")
     transaction_req = transactions.objects.get(pk=pk)
-    # print("\n\n",transaction_req.from_user.username,"\n\n")
     cur_user = request.user
     cur_user.account_balance = cur_user.account_balance + transaction_req.amount
     cur_user.save()
     transaction_req.delete()
-    return redirect(reverse('homepage'))
+    return redirect(reverse('profilepage'))
 
-@login_required
+@otp_required
 def reject_money(request,pk):
     print("\n\n",pk,"\n\n")
     transaction_req = transactions.objects.get(pk=pk)
@@ -121,7 +130,7 @@ def reject_money(request,pk):
     cur_user.account_balance = cur_user.account_balance + transaction_req.amount
     cur_user.save()
     transaction_req.delete()
-    return redirect(reverse('homepage'))
+    return redirect(reverse('profilepage'))
 
 @otp_required
 def add_friend(request,pk):
@@ -253,20 +262,6 @@ def otpsetup(request):
     temp=totp.config_url.replace("/", "%2F")
     print(temp)
     return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp)})(request)
-# @login_required
-# def otpsetup(request):
-#     totp=TOTPDevice.objects.get(user_id=request.user.id)
-#     # if request.method == 'POST':
-#     return auth_views.LoginView.as_view(authentication_form=SimpleOTPRegistrationForm,template_name='users/otp_setup.html',extra_context={'otpstring':"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(totp.config_url)})(request)
-#     #     print(form['otp_token'].value())
-#     #     if form.is_valid():
-#     #         print(form)
-#     #         user = authenticate(username=user.username, password=raw_password)
-#     #         login(request, user)
-#     #         return HttpResponseRedirect(reverse('homepage'))
-#     # else:
-#     #     form = SimpleOTPRegistrationForm(request.user)
-#     # return render(request, 'users/otp_setup.html', { 'form' : form ,'otpstring':"https://www.google.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(totp.config_url)})
 
 def signup(request):
     if request.method == 'POST':
@@ -324,7 +319,7 @@ def platinum_plan(request):
     return render(request, 'users/platinum_plan.html')
 
 @otp_required
-def reverify(request,plan):
+def reverify(request,plan,pk):
     request.session['reverify']=None
     if not request.session['reverify']:
         totp=TOTPDevice.objects.get(user_id=request.user.id)
@@ -336,9 +331,10 @@ def reverify(request,plan):
                 result=match_token(request.user,otp_token)
                 if not result:
                     errors = form._errors.setdefault("Incorrect OTP", ErrorList())   
-                    print(form.errors)
-                    return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan})
+                    return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan,'pk':pk})
                 request.session['reverify']=1
+                if plan=="confirm_transactions":
+                    return HttpResponseRedirect(reverse(plan,kwargs={'pk':pk}))
                 return HttpResponseRedirect(reverse(plan))
         else:
             return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan})
