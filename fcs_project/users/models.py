@@ -36,6 +36,7 @@ def create_profile(sender, **kwargs):
 class premium_users(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,unique=True)
     payment_plan = models.CharField(max_length=30,default="Silver")
+    number_of_groups = models.IntegerField(default=2)
 
 class transactions(models.Model):
     # transaction_id = models.IntegerField(primary_key=True)

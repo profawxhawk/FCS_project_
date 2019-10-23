@@ -19,7 +19,7 @@ from django_otp.forms import OTPTokenForm
 from django_otp import match_token
 from django.forms.utils import ErrorList
 from django.contrib.auth import views as auth_views
-
+import sys
 import requests
 @login_required
 def logout_view(request):
@@ -107,6 +107,7 @@ def confirm_transactions(request,pk):
         transaction_req.amount = float(request.session['amount'])
         request.user.account_balance = request.user.account_balance - float(request.session['amount'])
         request.session['amount']=0
+        request.session['reverify']=None
         transaction_req.save()
         request.user.save()
         return redirect(reverse('profilepage'))
@@ -319,7 +320,7 @@ def platinum_plan(request):
     return render(request, 'users/platinum_plan.html')
 
 @otp_required
-def reverify(request,plan,pk):
+def reverify(request,plan,pk=None):
     request.session['reverify']=None
     if not request.session['reverify']:
         totp=TOTPDevice.objects.get(user_id=request.user.id)
@@ -352,6 +353,7 @@ def get_silver(request):
         premium = premium_users()
         premium.user = request.user
         premium.payment_plan = 'Silver'
+        premium.number_of_groups = 2
         premium.save()
         cur_user = request.user
         prev_balance = cur_user.account_balance
@@ -373,6 +375,7 @@ def get_gold(request):
         premium = premium_users()
         premium.user = request.user
         premium.payment_plan = 'Gold'
+        premium.number_of_groups = 4
         premium.save()
         cur_user = request.user
         prev_balance = cur_user.account_balance
@@ -394,6 +397,7 @@ def get_platinum(request):
         premium = premium_users()
         premium.user = request.user
         premium.payment_plan = 'Platinum'
+        premium.number_of_groups = 2147483647
         premium.save()
         cur_user = request.user
         prev_balance = cur_user.account_balance
