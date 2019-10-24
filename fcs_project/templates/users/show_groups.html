@@ -1,0 +1,15 @@
+{% extends 'users/welcome.html' %}
+{% block head %}
+<title>Show Groups</title>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+{%if number > 0 %}
+<h3>You can create {{number}} groups</h3><br><br>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'create_group' %}">Create Group</a></button><br><br>
+{%endif%}
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'group_created' %}">Groups you created</a></button><br><br>
+<button class="btn btn-outline-info" type="submit"><a >Groups you are a member of</a></button><br><br>
+</div>
+{% endblock %}

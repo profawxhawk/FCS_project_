@@ -1,6 +1,6 @@
 {% extends 'users/welcome.html' %}
 {% block head %}
-<title>Edit Profile</title>
+<title>Options</title>
 {% endblock %}
 
 {% block body %}
@@ -8,8 +8,7 @@
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        {{ form1.as_p }}
-        <button class="btn btn-outline-info" type="submit">Submit</button>
+        <button  class="btn btn-outline-info" type="submit">Create Group</button>
     </form>
     <br>
 </div>

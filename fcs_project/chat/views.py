@@ -16,7 +16,7 @@ def room(request,pk):
         a = min(request.user.id,int(pk))
         b = max(int(pk),request.user.id)
         return render(request, 'chat/room.html', {
-            'room_name_json': mark_safe(json.dumps(str(a)+str(b))),
+            'room_name_json': mark_safe(json.dumps(str(a)+"_"+str(b))),
             'username': mark_safe(json.dumps(request.user.username)),
             'username1': mark_safe(json.dumps(other_user.username)),
             'userid': mark_safe(json.dumps(request.user.id)),

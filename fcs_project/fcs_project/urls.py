@@ -61,8 +61,10 @@ urlpatterns = [
     path('confirm_transactions(?P<pk>\d+)/', user_views.confirm_transactions, name='confirm_transactions'),
     path('admin/', admin.site.urls),
     path('adminotp/', admin_site.urls),
+    path('show_groups',user_views.show_groups,name="show_groups"),
     path('accept_request/(?P<pk>\d+)',user_views.accept_request,name='accept_request'),
     path('reject_request/(?P<pk>\d+)',user_views.reject_request,name='reject_request'),
     path('remove_friend/(?P<pk>\d+)',user_views.remove_friend,name='remove_friend'),
     path('room/(?P<pk>\d+)',chat_views.room,name='room'),
+    path('groups/',include('groups.urls'))
 ]

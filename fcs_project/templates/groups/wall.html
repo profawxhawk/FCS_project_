@@ -1,0 +1,21 @@
+{% extends 'groups/base.html' %}
+{% block  head %}
+<title>Group wall</title>
+{% endblock %}
+{% block body %}
+
+<h1 align="center">Welcome to {{group.name}}'s Wall</h1>
+<div class="container">
+    <form method="POST">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button type="submit">add post</button>
+    {% for post in posts %}
+    {%if post.group_id == group.id %}
+            <h3>{{ post.text }}</h3>
+            <p>Posted by {{ post.posted_by }} on {{ post.created }}</p>
+    {%endif%}
+    {% endfor %}
+</div>
+<div class="container">
+{% endblock %}

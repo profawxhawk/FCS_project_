@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_totp',
     'django_otp.plugins.otp_static',
     'chat',
+    'groups'
 ]
 AUTH_USER_MODEL = 'users.User'
 MIDDLEWARE = [

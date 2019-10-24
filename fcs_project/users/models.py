@@ -1,5 +1,5 @@
 from django.db import models
-
+from groups.models import *
 # Create your models here.
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -17,10 +17,11 @@ class UserProfile(models.Model):
     phone=models.IntegerField(default=0)
 
 class posts(models.Model):
-    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='owner')
+    user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='owner',default=None,null=True)
     text=models.CharField(max_length=300,default="")
     created = models.DateTimeField(auto_now_add=True)
     posted_by = models.ForeignKey(User,on_delete=models.CASCADE,related_name='poster',default="")
+    group=models.ForeignKey(Group,on_delete=models.CASCADE,related_name='poster',default=None,null=True)
 
 class friend_req(models.Model):
     req_id = models.IntegerField(primary_key=True)
@@ -37,6 +38,7 @@ class premium_users(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,unique=True)
     payment_plan = models.CharField(max_length=30,default="Silver")
     number_of_groups = models.IntegerField(default=2)
+    current_number_of_groups = models.IntegerField(default=0)
 
 class transactions(models.Model):
     # transaction_id = models.IntegerField(primary_key=True)

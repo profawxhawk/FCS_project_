@@ -3,8 +3,6 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
 from .models import User,UserProfile,posts,transactions
 from django_otp.forms import OTPAuthenticationForm,OTPTokenForm
-from django import forms
-
 class SimpleOTPRegistrationForm(OTPTokenForm):
     otp_device = forms.CharField(required=False, widget=forms.HiddenInput)
     otp_challenge = forms.CharField(required=False, widget=forms.HiddenInput)

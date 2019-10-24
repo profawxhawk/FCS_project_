@@ -31,6 +31,23 @@ def options(request):
     return render(request, 'users/options.html')
 
 @otp_required
+def show_groups(request):
+    if request.user.premium_user==True:
+        number_of_groups = premium_users.objects.values('number_of_groups').filter(user_id=request.user.id)
+        cur_number_of_groups = premium_users.objects.values('current_number_of_groups').filter(user_id=request.user.id)
+        temp=(number_of_groups[0]['number_of_groups'])
+        (number_of_groups)
+        ava=cur_number_of_groups[0]['current_number_of_groups']
+        if temp > 4: 
+            val="Infinite"
+        else:
+            val=temp-ava
+    else:
+        val=0
+    return render(request, 'users/show_groups.html',{'number':val})
+
+
+@otp_required
 def home(request):
     request.session['reverify']=None
     print(request.session['reverify'])
@@ -187,6 +204,7 @@ def timeline(request,pk):
                 form = postform(request.POST)
                 if form.is_valid():
                     post = form.save(commit=False)
+                    post.group
                     post.user = other_user
                     post.posted_by=request.user
                     post.text=form.cleaned_data['post']

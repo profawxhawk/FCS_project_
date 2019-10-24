@@ -1,0 +1,64 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        {% block head %}
+        <title >Welcome to the groups</title>
+        {% endblock %}
+      </head>
+      <body>
+          <div style="background-color: #25D366; position: fixed; float: left; overflow-y: auto;width: 150px; height: 100%;" >
+              <h1></h1>
+              </div>
+          <nav class="navbar navbar-expand-lg navbar-light " style="background-color: #0084FF;">
+              <div class="container-fluid">
+                  <div class="navbar-header">
+                      <a class="navbar-brand" href="#"  style="color: #FFFFFF;">Social Network App</a>
+                    </div>
+                    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                        {% if user.is_authenticated %}
+                        <ul class="navbar-nav">
+                            <li class="nav-item"><a class="nav-link" href="{% url 'homepage' %}" style="color: #FFFFFF;">Home</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'profilepage' %}" style="color: #FFFFFF;">Group Wall</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'homepage' %}" style="color: #FFFFFF;">Group settings</a></li>
+                        </ul>
+                        <div class="collapse navbar-collapse justify-content-end" id="navbarCollapse">
+                            <ul class="navbar-nav my-2 my-lg-0">
+                               
+                                <form class="form-inline my-2 my-lg-0">
+                                    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                                    <button class="btn btn-success" type="submit">Search</button>
+                                  </form>
+                                  <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}" style="color: #FFFFFF;">Log out</a></li>
+                            </ul>
+                          </div>
+                        
+                        {% else %}
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}" style="color: #FFFFFF;">Reset Password</a></li>
+                        </ul>
+                        <div class="collapse navbar-collapse justify-content-end" id="navbarCollapse">
+                            <ul class="navbar-nav my-2 my-lg-0">
+                                <li class="nav-item"><a class="nav-link" href="{% url 'login' %}" style="color: #FFFFFF;">Login</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{% url 'signup' %}" style="color: #FFFFFF;">Register</a></li>
+                            </ul>
+                          </div>
+                        {% endif %}
+                      </div>
+              </div>
+            </nav>
+           
+            <br>
+        {% block body %}
+            <h1 align="center">Welcome to your homepage</h1>
+        {% endblock %}
+    </body>
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+</html>
