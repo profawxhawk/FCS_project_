@@ -16,6 +16,3 @@ class Group_user_relation(models.Model):
 class group_requests(models.Model):
     group=models.ForeignKey(Group,on_delete=models.CASCADE)
     user=models.ForeignKey('users.User',on_delete=models.CASCADE)
-    
-
-
