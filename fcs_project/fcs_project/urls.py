@@ -88,6 +88,7 @@ urlpatterns = [
     path('reject_cash_request/(?P<pk>\d+)',user_views.reject_cash_request,name='reject_cash_request'),
     path('confirm_accept_cash_request/(?P<pk>\d+)',user_views.confirm_accept_cash_request,name='confirm_accept_cash_request'),
     path('confirm_reject_cash_request/(?P<pk>\d+)',user_views.confirm_reject_cash_request,name='confirm_reject_cash_request'),
+    path('confirm_send_group_request/(?P<pk>\d+)',user_views.confirm_send_group_request,name='confirm_send_group_request'),
 ]
 urlpatterns += staticfiles_urlpatterns()
 urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

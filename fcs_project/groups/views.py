@@ -8,9 +8,12 @@ from users.forms import postform
 # Create your views here.
 @otp_required
 def group_settings(request,pk):
-    if Group_user_relation.objects.filter(user_id=request.user.id,group_id=pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if Group_user_relation.objects.filter(user_id=req_user.id,group_id=pk):
         group1 = Group.objects.get(pk=pk)
-        user1 = request.user
+        user1 = req_user
         the_relation = Group_user_relation.objects.filter(group = group1,user = user1)
         number_of_users=len(Group_user_relation.objects.filter(group = group1))
         price=group1.price
@@ -45,10 +48,13 @@ def group_settings(request,pk):
         args = {'desperate_users':desperate_users,'no_of_users':number_of_users,'price':price,'hid':1,'members':member_details,'group':group1}
         return render(request, 'groups/groups_settings.html',args)
     else:
-        return render(reverse('homepage'))
+        return redirect(reverse('homepage'))
 @otp_required
 def group_wall(request,pk):
-    if Group_user_relation.objects.filter(user_id=request.user.id,group_id=pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if Group_user_relation.objects.filter(user_id=req_user.id,group_id=pk):
         group=Group.objects.get(pk=pk)
         post = posts.objects.all().order_by('-created')
         if request.method=='GET':
@@ -61,9 +67,9 @@ def group_wall(request,pk):
             form = postform(request.POST)
             if form.is_valid():
                 post = form.save(commit=False)
-                # post.user=request.user
+                # post.user=req_user
                 post.group = group
-                post.posted_by=request.user
+                post.posted_by=req_user
                 post.text=form.cleaned_data['post']
                 post.save()
                 form = postform()
@@ -74,25 +80,31 @@ def group_wall(request,pk):
         return redirect(reverse('homepage'))
 @otp_required
 def groups_u_created(request):
-    groups=Group.objects.filter(owner_id=request.user.id)
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    groups=Group.objects.filter(owner_id=req_user.id)
     args={'groups':groups}
     return render(request, 'groups/groups_display.html', args)
 @otp_required
 def create_group(request):
-    if request.user.premium_user==True:
-        number_of_groups = premium_users.objects.values('number_of_groups').filter(user_id=request.user.id)
-        cur_number_of_groups = premium_users.objects.values('current_number_of_groups').filter(user_id=request.user.id)
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.premium_user==True:
+        number_of_groups = premium_users.objects.values('number_of_groups').filter(user_id=req_user.id)
+        cur_number_of_groups = premium_users.objects.values('current_number_of_groups').filter(user_id=req_user.id)
         temp=(number_of_groups[0]['number_of_groups'])
         ava=cur_number_of_groups[0]['current_number_of_groups']
         if temp>ava:
             if request.method == 'POST':
                 form = GroupCreationform(request.POST)
                 if form.is_valid():
-                    premium_users.objects.filter(user_id=request.user.id).update(current_number_of_groups=ava+1)
+                    premium_users.objects.filter(user_id=req_user.id).update(current_number_of_groups=ava+1)
                     group=form.save(commit=False)
-                    group.owner=request.user
+                    group.owner=req_user
                     group.save()
-                    group_user=Group_user_relation(group=group,user=request.user,is_owner=True)
+                    group_user=Group_user_relation(group=group,user=req_user,is_owner=True)
                     print(group_user)
                     group_user.save()
                     return redirect(reverse('show_groups'))
@@ -106,6 +118,9 @@ def create_group(request):
 
 @otp_required
 def accept_group_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     request1 = group_requests.objects.get(pk=pk)
     group1 = request1.group
     user1 = request1.user
@@ -114,21 +129,36 @@ def accept_group_request(request,pk):
     group_user1.user = user1
     group_user1.save()
     request1.delete()
-    groups = Group.objects.filter(owner_id=request.user.id)
+    groups = Group.objects.filter(owner_id=req_user.id)
     args={'groups':groups}
-    return redirect(reverse('group_settings',kwargs={'pk':pk}))
+    gpk = group1.pk
+    return redirect(reverse('group_settings',kwargs={'pk':gpk}))
 
 @otp_required
 def reject_group_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     request1 = group_requests.objects.get(pk=pk)
+    cur_user = req_user
+    requestee = request1.user
+    group1 = request1.group
+    refund = group1.price
+    gpk = group1.pk
+    requestee.account_balance += refund
+    requestee.save()
     request1.delete()
-    groups = Group.objects.filter(owner_id=request.user.id)
+    groups = Group.objects.filter(owner_id=req_user.id)
     args={'groups':groups}
-    return redirect(reverse('group_settings',kwargs={'pk':pk}))
+
+    return redirect(reverse('group_settings',kwargs={'pk':gpk}))
 
 @otp_required
 def groups_you_are_member_of(request):
-    relations_list = Group_user_relation.objects.filter(user = request.user)
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    relations_list = Group_user_relation.objects.filter(user = req_user)
     groups = []
     for relation_i in relations_list:
         groups.append(relation_i.group)
