@@ -18,7 +18,7 @@
         <p><h3>Your phone:{{user.userprofile.phone}}</h3></p>
         {% if user.commercial_user %}
         <p><h3>Type of user: Commercial User</h3></p>
-        {% elif user.commercial_user %}
+        {% elif user.premium_user %}
         <p><h3>Type of user: Premium User</h3></p>
         <p><h3>Your Plan:{{plan.0}}</h3></p>
         {% else %}

@@ -54,9 +54,13 @@ def options(request):
 
 @otp_required
 def show_groups(request):
-    if request.user.premium_user==True:
-        number_of_groups = premium_users.objects.values('number_of_groups').filter(user_id=request.user.id)
-        cur_number_of_groups = premium_users.objects.values('current_number_of_groups').filter(user_id=request.user.id)
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+
+    if req_user.premium_user==True:
+        number_of_groups = premium_users.objects.values('number_of_groups').filter(user_id=uid)
+        cur_number_of_groups = premium_users.objects.values('current_number_of_groups').filter(user_id=uid)
         temp=(number_of_groups[0]['number_of_groups'])
         (number_of_groups)
         ava=cur_number_of_groups[0]['current_number_of_groups']
@@ -69,40 +73,46 @@ def show_groups(request):
     return render(request, 'users/show_groups.html',{'number':val})
 
 def search_func(query,request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     query = escape(strip_tags(query))
     users=User.objects.filter(Q(username__icontains=query))
     groups=Group.objects.filter(Q(name__icontains=query))
     page=Pages.objects.filter(Q(title__icontains=query))
     friend_list_search=[]
     group_list=[]
-    requests_sent = group_requests.objects.filter(user=request.user)
+    requests_sent = group_requests.objects.filter(user=req_user)
     for i in groups:
-        temp=Group_user_relation.objects.filter(group=i,user=request.user)
+        temp=Group_user_relation.objects.filter(group=i,user=req_user)
         if not temp:
             group_list.append(0)
         else:
             group_list.append(1)
     group_final=zip(groups, group_list)
     for i in users:
-        if Friend.objects.are_friends(request.user,i)==True:
+        if Friend.objects.are_friends(req_user,i)==True:
             friend_list_search.append(i)
     return friend_list_search,group_final,requests_sent,page
     
 @otp_required
 def home(request):
-    request.session['reverify']=None
     session = Session.objects.get(session_key=request.session._session_key)
     uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    request.session['reverify']=None
+    # session = Session.objects.get(session_key=request.session._session_key)
+    # uid = session.get_decoded().get('_auth_user_id')
     if request.method=='GET':
         form = postform()
         post = posts.objects.all().order_by('-created')
-        users=User.objects.exclude(id=request.user.id)
-        pending_requests = friend_req.objects.raw('select to_user_id from friendship_friendshiprequest a where a.from_user_id = '+str(request.user.id)+'  ;',translations={'to_user_id' : 'req_id'})
+        users=User.objects.exclude(id=uid)
+        pending_requests = friend_req.objects.raw('select to_user_id from friendship_friendshiprequest a where a.from_user_id = '+str(uid)+'  ;',translations={'to_user_id' : 'req_id'})
         sent_req = []
         for obj in pending_requests:
             sent_req.append(obj.req_id)
-        unread_req = Friend.objects.unrejected_requests(user=request.user)
-        friends = Friend.objects.friends(request.user)
+        unread_req = Friend.objects.unrejected_requests(user=req_user)
+        friends = Friend.objects.friends(req_user)
         friend_id = []
         for obj in friends:
             friend_id.append(obj.id)
@@ -110,8 +120,8 @@ def home(request):
         for obj in unread_req:
             pending_id.append(obj.from_user_id)
         query = request.GET.get('query')
-        messages = Message.objects.filter(to=request.user.id)
-        messages_sent = Message.objects.filter(author = request.user.id)
+        messages = Message.objects.filter(to=uid)
+        messages_sent = Message.objects.filter(author = uid)
         sent = []
         sent_obj = []
         for obj in messages_sent:
@@ -142,8 +152,8 @@ def home(request):
         form = postform(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
-            post.user = request.user
-            post.posted_by=request.user
+            post.user = req_user
+            post.posted_by=req_user
             post.text=form.cleaned_data['post']
             post.save()
             form = postform()
@@ -153,11 +163,14 @@ def home(request):
 
 @otp_required
 def transaction_occur(request):
-    friends = Friend.objects.friends(request.user)
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    friends = Friend.objects.friends(req_user)
     friend_id = []
     for obj in friends:
         friend_id.append(obj.id)
-    transactions_pending = transactions.objects.filter(to_user=request.user)
+    transactions_pending = transactions.objects.filter(to_user=req_user)
     args = {
         'friend_id':friend_id,'friend_iter':friends,'pending':transactions_pending
     }
@@ -165,34 +178,39 @@ def transaction_occur(request):
 
 @otp_required
 def do_transactions(request,pk=None):
-
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.method == 'POST':
         form = get_transaction_amount(request.POST)
         if form.is_valid():
             t_amount = form['amount'].value()
             request.session['amount']=t_amount
-            if float(t_amount) > request.user.account_balance or float(t_amount)<0:
+            if float(t_amount) > req_user.account_balance or float(t_amount)<0:
                 return redirect(reverse('profilepage'))
             return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_transactions','pk':pk}))
            
     else:
-        form = get_transaction_amount(instance=request.user)
+        form = get_transaction_amount(instance=req_user)
         args = {'form': form}
         return render(request, 'users/do_transactions.html', args)
 
 @otp_required
 def confirm_transactions(request,pk):
-    if request.session['reverify']==1 and Friend.objects.are_friends(request.user,other_user)==True:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if request.session['reverify']==1 and Friend.objects.are_friends(req_user,other_user)==True:
         other_user = User.objects.get(pk=pk)
         transaction_req = transactions()
-        transaction_req.from_user = request.user
+        transaction_req.from_user = req_user
         transaction_req.to_user = other_user
         transaction_req.amount = float(request.session['amount'])
-        request.user.account_balance = request.user.account_balance - float(request.session['amount'])
+        req_user.account_balance = req_user.account_balance - float(request.session['amount'])
         request.session['amount']=0
         request.session['reverify']=None
         transaction_req.save()
-        request.user.save()
+        req_user.save()
         return redirect(reverse('profilepage'))
     else:
         request.session['reverify']=None
@@ -200,8 +218,11 @@ def confirm_transactions(request,pk):
 
 @otp_required
 def accept_money(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     transaction_req = transactions.objects.get(pk=pk)
-    cur_user = request.user
+    cur_user = req_user
     cur_user.account_balance = cur_user.account_balance + transaction_req.amount
     cur_user.save()
     transaction_req.delete()
@@ -209,11 +230,14 @@ def accept_money(request,pk):
 
 @otp_required
 def confirm_add_money(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.session['reverify']==1:
-        if (request.user.bank_account-float(request.session['amount'])) < 0 :
+        if (req_user.bank_account-float(request.session['amount'])) < 0 :
             request.session['reverify']=None
             return redirect(reverse('upgrade'))
-        cur_user = request.user
+        cur_user = req_user
         prev_balance = cur_user.account_balance
         cur_user.account_balance = prev_balance + float(request.session['amount'])
         cur_user.bank_account = cur_user.bank_account - float(request.session['amount'])
@@ -226,21 +250,27 @@ def confirm_add_money(request):
 
 @otp_required
 def add_money(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.method == 'POST':
         form = get_amount(request.POST)
         if form.is_valid():
             t_amount = form['amt'].value()
-            if float(t_amount) > request.user.bank_account or float(t_amount) < 0:
+            if float(t_amount) > req_user.bank_account or float(t_amount) < 0:
                 return redirect(reverse('profilepage'))
             request.session['amount']=t_amount
             return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_add_money','pk':1036372758}))
     else:
-        form = get_amount(instance=request.user)
+        form = get_amount(instance=req_user)
         args = {'form': form}
         return render(request, 'users/add_money.html', args)
 
 @otp_required
 def reject_money(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     transaction_req = transactions.objects.get(pk=pk)
     cur_user = transaction_req.from_user
     cur_user.account_balance = cur_user.account_balance + transaction_req.amount
@@ -250,46 +280,64 @@ def reject_money(request,pk):
 
 @otp_required
 def add_friend(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     other_user = User.objects.get(pk=pk)
-    requests=FriendshipRequest.objects.filter(from_user=request.user, to_user=other_user)
-    if Friend.objects.are_friends(request.user, other_user) == False and not requests: 
-        Friend.objects.add_friend(request.user,other_user,message='Hi! I would like to add you') 
+    requests=FriendshipRequest.objects.filter(from_user=req_user, to_user=other_user)
+    if Friend.objects.are_friends(req_user, other_user) == False and not requests: 
+        Friend.objects.add_friend(req_user,other_user,message='Hi! I would like to add you') 
     return redirect(reverse('homepage'))
 
 @otp_required
 def accept_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     other_user = User.objects.get(pk=pk)
-    requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=request.user)
-    if Friend.objects.are_friends(request.user, other_user) == False and requests: 
-        friend_request = FriendshipRequest.objects.get(from_user=pk,to_user=request.user.id)
+    requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=req_user)
+    if Friend.objects.are_friends(req_user, other_user) == False and requests: 
+        friend_request = FriendshipRequest.objects.get(from_user=pk,to_user=uid)
         friend_request.accept()
     return redirect(reverse('homepage'))
 
 @otp_required
 def reject_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     other_user = User.objects.get(pk=pk)
-    requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=request.user)
-    if Friend.objects.are_friends(request.user, other_user) == False and requests: 
-        friend_request = FriendshipRequest.objects.get(from_user=pk,to_user=request.user.id)
+    requests=FriendshipRequest.objects.filter(from_user=other_user, to_user=req_user)
+    if Friend.objects.are_friends(req_user, other_user) == False and requests: 
+        friend_request = FriendshipRequest.objects.get(from_user=pk,to_user=uid)
         friend_request.cancel()
     return redirect(reverse('homepage'))
 
 @otp_required
 def remove_friend(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     other_user = User.objects.get(pk=pk)
-    if Friend.objects.are_friends(request.user, other_user)==True:
-        Friend.objects.remove_friend(request.user, other_user)
+    if Friend.objects.are_friends(req_user, other_user)==True:
+        Friend.objects.remove_friend(req_user, other_user)
     return redirect(reverse('homepage'))
 
 
 def welcome(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     request.session['reverify']=None
     return render(request, 'users/welcome.html')
 
 @otp_required
 def timeline(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     other_user = User.objects.get(pk=pk)
-    if Friend.objects.are_friends(request.user, other_user) == True:
+    if Friend.objects.are_friends(req_user, other_user) == True:
         post = posts.objects.all().order_by('-created')
         if other_user.userprofile.privacy==False:
             if request.method=='GET':
@@ -304,7 +352,7 @@ def timeline(request,pk):
                     post = form.save(commit=False)
                     post.group
                     post.user = other_user
-                    post.posted_by=request.user
+                    post.posted_by=req_user
                     post.text=form.cleaned_data['post']
                     post.save()
                     form = postform()
@@ -315,8 +363,11 @@ def timeline(request,pk):
 
 @otp_required
 def view_friend(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     other_user = User.objects.get(pk=pk)
-    if Friend.objects.are_friends(request.user, other_user) == True:
+    if Friend.objects.are_friends(req_user, other_user) == True:
         username=other_user.username
         firstname=other_user.first_name
         lastname=other_user.last_name
@@ -331,31 +382,40 @@ def view_friend(request,pk):
 
 @otp_required
 def profilepage(request):
-    plan=premium_users.objects.values_list('payment_plan', flat=True).filter(user_id=request.user.id)
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    plan=premium_users.objects.values_list('payment_plan', flat=True).filter(user_id=uid)
     if not plan:
         plan=["None"]
-    return render(request,'users/profilepage.html',{'user':request.user,'plan':plan})
+    return render(request,'users/profilepage.html',{'user':req_user,'plan':plan})
 
 @otp_required
 def editprofile(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.method == 'POST':
-        form = EditProfileForm(request.POST, instance=request.user)
-        form1 = EditProfileFormextend(request.POST, instance=request.user.userprofile)
+        form = EditProfileForm(request.POST, instance=req_user)
+        form1 = EditProfileFormextend(request.POST, instance=req_user.userprofile)
         if form.is_valid() and form1.is_valid():
             form.save()
             form1.save()
             return redirect(reverse('profilepage'))
 
     else:
-        form = EditProfileForm(instance=request.user)
-        form1 = EditProfileFormextend(instance=request.user.userprofile)
+        form = EditProfileForm(instance=req_user)
+        form1 = EditProfileFormextend(instance=req_user.userprofile)
         args = {'form': form,'form1': form1}
         return render(request, 'users/edit_profile.html', args)
 
 @otp_required
 def changepass(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.method == 'POST':
-        form = PasswordChangeForm(data=request.POST, user=request.user)
+        form = PasswordChangeForm(data=request.POST, user=req_user)
         if form.is_valid():
             form.save()
             update_session_auth_hash(request, form.user)
@@ -364,23 +424,29 @@ def changepass(request):
             return redirect(reverse('change_password'))
 
     else:
-        form = PasswordChangeForm(user=request.user)
+        form = PasswordChangeForm(user=req_user)
         args = {'form': form }
         return render(request, 'users/change_password.html', args)
 
 
 @login_required
 def otpsetup(request):
-    if request.user.is_verified()==True:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.is_verified()==True:
         return redirect(reverse('homepage'))
 
-    totp=TOTPDevice.objects.get(user_id=request.user.id)
-    form_cls = partial(SimpleOTPRegistrationForm, request.user)
+    totp=TOTPDevice.objects.get(user_id=uid)
+    form_cls = partial(SimpleOTPRegistrationForm, req_user)
     temp=totp.config_url.replace("/", "%2F")
     print(temp)
     return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp)})(request)
 
 def signup(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -400,63 +466,81 @@ def signup(request):
 
 @otp_required
 def upgrade(request):
-    if request.user.premium_user==True:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.premium_user==True:
         return redirect(reverse('profilepage'))
     plan=[]
-    if (request.user.account_balance - 50)>=0:
+    if (req_user.account_balance - 50)>=0:
         plan.append("Silver")
-    if (request.user.account_balance - 100)>=0:
+    if (req_user.account_balance - 100)>=0:
         plan.append("Gold")
-    if (request.user.account_balance - 150)>=0:
+    if (req_user.account_balance - 150)>=0:
         plan.append("Platinum")
-    if (request.user.account_balance - 5000)>=0:
+    if (req_user.account_balance - 5000)>=0:
         plan.append("Commercial")
     return render(request, 'users/upgrade.html',{'plans':plan})
 
 @otp_required
 def silver_plan(request):
-    if request.user.premium_user==True:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.premium_user==True:
         return redirect(reverse('profilepage'))
-    if (request.user.account_balance-50) < 0 :
+    if (req_user.account_balance-50) < 0 :
         return redirect(reverse('upgrade'))
     return render(request, 'users/silver_plan.html')
 
 @otp_required
 def gold_plan(request):
-    if request.user.premium_user==True:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.premium_user==True:
         return redirect(reverse('profilepage'))
-    if (request.user.account_balance-100) < 0 :
+    if (req_user.account_balance-100) < 0 :
         return redirect(reverse('upgrade'))
     return render(request, 'users/gold_plan.html')
 
 @otp_required
 def platinum_plan(request):
-    if request.user.premium_user==True:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.premium_user==True:
         return redirect(reverse('profilepage'))
-    if (request.user.account_balance-150) < 0 :
+    if (req_user.account_balance-150) < 0 :
         return redirect(reverse('upgrade'))
     return render(request, 'users/platinum_plan.html')
 
 @otp_required
 def commercial_plan(request):
-    if request.user.commercial_user==True:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.commercial_user==True:
         return redirect(reverse('profilepage'))
-    if (request.user.account_balance-5000) < 0 :
+    if (req_user.account_balance-5000) < 0 :
         return redirect(reverse('upgrade'))
     return render(request, 'users/commercial_plan.html')
 
 @otp_required
 def get_commercial(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.session['reverify']==1:
-        if request.user.commercial_user==True:
+        if req_user.commercial_user==True:
             return redirect(reverse('profilepage'))
-        if (request.user.account_balance-5000) < 0 :
+        if (req_user.account_balance-5000) < 0 :
             return redirect(reverse('upgrade'))
         commercial = commercial_users()
-        commercial.user = request.user
+        commercial.user = req_user
         commercial.number_of_groups = 2147483647
         commercial.save()
-        cur_user = request.user
+        cur_user = req_user
         prev_balance = cur_user.account_balance
         cur_user.commercial_user = True
         cur_user.premium_user = False
@@ -467,16 +551,60 @@ def get_commercial(request):
         return redirect(reverse('homepage'))
 
 @otp_required
+def send_group_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    group_to_join = Group.objects.get(pk=pk)
+    cur_user = req_user
+    money_with_user = cur_user.account_balance
+    money_to_join = group_to_join.price
+    if money_to_join > money_with_user:
+        return redirect(reverse('show_groups'))
+    return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_send_group_request','pk':pk}))
+
+@otp_required
+def confirm_send_group_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    group_to_join = Group.objects.get(pk=pk)
+    cur_user = req_user
+    grp_owner = group_to_join.owner
+    request.session['amount']=group_to_join.price
+    if request.session['reverify']==1 and request.session['amount']<req_user.account_balance:
+        req_user.account_balance = req_user.account_balance - float(request.session['amount'])
+        # grp_owner.account_balance += request.session['amount']
+        group_request1 = group_requests()
+        group_request1.group = group_to_join
+        group_request1.user = cur_user
+        group_request1.save()
+        # grp_owner.save()
+        request.session['amount']=0
+        request.session['reverify']=None
+        req_user.save()
+        return redirect(reverse('show_groups'))
+    else:
+        # print("\nNot Here:(\n")
+        request.session['reverify']=None
+        return redirect(reverse('show_groups'))
+
+    return redirect(reverse('show_groups'))
+
+@otp_required
 def reverify(request,plan,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     request.session['reverify']=None
     if not request.session['reverify']:
-        totp=TOTPDevice.objects.get(user_id=request.user.id)
+        totp=TOTPDevice.objects.get(user_id=uid)
         form = otpform(request.POST)
         temp=totp.config_url.replace("/", "%2F")
         if request.method == 'POST':   
             if form.is_valid():
                 otp_token=form.cleaned_data['otp_token']
-                result=match_token(request.user,otp_token)
+                result=match_token(req_user,otp_token)
                 if not result:
                     errors = form._errors.setdefault("Incorrect OTP", ErrorList())   
                     return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan,'pk':pk})
@@ -484,6 +612,8 @@ def reverify(request,plan,pk):
                 if plan=="confirm_transactions":
                     return HttpResponseRedirect(reverse(plan,kwargs={'pk':pk}))
                 if plan=="confirm_accept_cash_request":
+                    return HttpResponseRedirect(reverse(plan,kwargs={'pk':pk}))
+                if plan=="confirm_send_group_request":
                     return HttpResponseRedirect(reverse(plan,kwargs={'pk':pk}))
                 return HttpResponseRedirect(reverse(plan))
         else:
@@ -494,19 +624,22 @@ def reverify(request,plan,pk):
 
 @otp_required
 def get_silver(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.session['reverify']==1:
-        if request.user.premium_user==True:
+        if req_user.premium_user==True:
             request.session['reverify']=None
             return redirect(reverse('profilepage'))
-        if (request.user.account_balance-50) < 0 :
+        if (req_user.account_balance-50) < 0 :
             request.session['reverify']=None
             return redirect(reverse('upgrade'))
         premium = premium_users()
-        premium.user = request.user
+        premium.user = req_user
         premium.payment_plan = 'Silver'
         premium.number_of_groups = 2
         premium.save()
-        cur_user = request.user
+        cur_user = req_user
         prev_balance = cur_user.account_balance
         cur_user.premium_user = True
         cur_user.account_balance = prev_balance - 50
@@ -518,19 +651,22 @@ def get_silver(request):
 
 @otp_required
 def get_gold(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.session['reverify']==1:
-        if request.user.premium_user==True:
+        if req_user.premium_user==True:
             request.session['reverify']=None
             return redirect(reverse('profilepage'))
-        if (request.user.account_balance-100) < 0 :
+        if (req_user.account_balance-100) < 0 :
             request.session['reverify']=None
             return redirect(reverse('upgrade'))
         premium = premium_users()
-        premium.user = request.user
+        premium.user = req_user
         premium.payment_plan = 'Gold'
         premium.number_of_groups = 4
         premium.save()
-        cur_user = request.user
+        cur_user = req_user
         prev_balance = cur_user.account_balance
         cur_user.premium_user = True
         cur_user.account_balance = prev_balance - 100
@@ -542,17 +678,20 @@ def get_gold(request):
 
 @otp_required
 def get_platinum(request):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.session['reverify']==1:
-        if request.user.premium_user==True:
+        if req_user.premium_user==True:
             return redirect(reverse('profilepage'))
-        if (request.user.account_balance-150) < 0 :
+        if (req_user.account_balance-150) < 0 :
             return redirect(reverse('upgrade'))
         premium = premium_users()
-        premium.user = request.user
+        premium.user = req_user
         premium.payment_plan = 'Platinum'
         premium.number_of_groups = 2147483647
         premium.save()
-        cur_user = request.user
+        cur_user = req_user
         prev_balance = cur_user.account_balance
         cur_user.premium_user = True
         cur_user.account_balance = prev_balance - 150
@@ -564,28 +703,25 @@ def get_platinum(request):
 
 @otp_required
 def cancel_plan(request):
-    if request.user.premium_user==False:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.premium_user==False:
         return redirect(reverse('profilepage'))
-    premium_users.objects.filter(user=request.user).delete()
-    cur_user = request.user
+    premium_users.objects.filter(user=req_user).delete()
+    cur_user = req_user
     cur_user.premium_user = False
     cur_user.save()
     return render(request, 'users/cancel_plan.html') 
 
-@otp_required
-def send_group_request(request,pk):
-    group_to_join = Group.objects.get(pk=pk)
-    cur_user = request.user
-    group_request1 = group_requests()
-    group_request1.user = cur_user
-    group_request1.group = group_to_join
-    group_request1.save()
-    return redirect(reverse('show_groups'))
 
 @otp_required
 def accept_group_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     group_to_join = Group.objects.get(pk=pk)
-    cur_user = request.user
+    cur_user = req_user
     group_request1 = group_requests()
     group_request1.user = cur_user
     group_request1.group = group_to_join
@@ -594,6 +730,9 @@ def accept_group_request(request,pk):
 
 @otp_required
 def request_cash(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     if request.method == 'POST':
         form = get_amount(request.POST)
         if form.is_valid():
@@ -603,39 +742,45 @@ def request_cash(request,pk):
             request.session['amount']=t_amount
             money_request = money_requests()
             money_request.amount = t_amount
-            money_request.from_user = request.user
+            money_request.from_user = req_user
             other_user = User.objects.get(pk=pk)
             money_request.to_user = other_user
             money_request.save()
             return redirect(reverse('profilepage'))
     else:
-        form = get_amount(instance=request.user)
+        form = get_amount(instance=req_user)
         args = {'form': form}
         return render(request, 'users/request_cash.html', args)
 
 @otp_required
 def accept_cash_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     the_request = money_requests.objects.get(pk=pk)
     request.session['amount']=float(the_request.amount)
     other_user = the_request.from_user
-    if Friend.objects.are_friends(request.user,other_user)==False:
+    if Friend.objects.are_friends(req_user,other_user)==False:
         return redirect(reverse('profilepage'))
-    if float(the_request.amount) > request.user.account_balance or float(the_request.amount)<0:
+    if float(the_request.amount) > req_user.account_balance or float(the_request.amount)<0:
         print("\n\nnot un-friends\n\n")
         return redirect(reverse('profilepage'))
     return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_accept_cash_request','pk':pk}))
 @otp_required
 def confirm_accept_cash_request(request,pk):
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
     the_request = money_requests.objects.get(pk=pk)
     request.session['amount']=float(the_request.amount)
     other_user = the_request.from_user
-    if request.session['reverify']==1 and Friend.objects.are_friends(request.user,other_user)==True and request.session['amount']<request.user.account_balance:
-        request.user.account_balance = request.user.account_balance - float(request.session['amount'])
+    if request.session['reverify']==1 and Friend.objects.are_friends(req_user,other_user)==True and request.session['amount']<req_user.account_balance:
+        req_user.account_balance = req_user.account_balance - float(request.session['amount'])
         other_user.account_balance += request.session['amount']
         other_user.save()
         request.session['amount']=0
         request.session['reverify']=None
-        request.user.save()
+        req_user.save()
         the_request.delete()
         return redirect(reverse('profilepage'))
     else:
@@ -647,6 +792,7 @@ def confirm_accept_cash_request(request,pk):
 
 @otp_required
 def reject_cash_request(request,pk):
+
     the_request = money_requests.objects.get(pk=pk)
     the_request.delete()
     return redirect(reverse('profilepage'))
@@ -656,25 +802,31 @@ def confirm_reject_cash_request(request,pk):
 
 @otp_required
 def my_pages(request):
-    if request.user.commercial_user==False:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.commercial_user==False:
         return redirect(reverse('profilepage'))
     else:
-        lis = Pages.objects.filter(user_id=request.user.pk)
+        lis = Pages.objects.filter(user_id=uid)
         print(lis)
         args = {'lis':lis,}
         return render(request, 'users/my_pages.html', args)
 
 @otp_required
 def create_page(request):
-    if request.user.commercial_user==False:
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    req_user = User.objects.get(pk=uid)
+    if req_user.commercial_user==False:
         return redirect(reverse('profilepage'))
     else:
         if request.method == 'POST':
         
             # form = page_form(request.POST)
             # if form.is_valid():
-            #     form.user = request.user
-            #     form.user_id = request.user.pk
+            #     form.user = req_user
+            #     form.user_id = uid
             #     print(form.user_id)
             #     form.save()
                 
@@ -682,7 +834,7 @@ def create_page(request):
            form = page_form(request.POST,request.FILES)
            if form.is_valid():
                post = form.save(commit=False)
-               post.user = request.user
+               post.user = req_user
                post.save()
                return redirect(reverse('profilepage'))
 
@@ -701,13 +853,13 @@ def show_page(request,pk1):
 
 # @otp_required
 # def pages(request):
-#     if request.user.commercial_user==False:
+#     if req_user.commercial_user==False:
 #         return redirect(reverse('profilepage'))
 #     else:
 #         args = {}
 #         return render(request, 'users/my_pages.html', args)
     # if request.method == 'POST':
-    #     form = PasswordChangeForm(data=request.POST, user=request.user)
+    #     form = PasswordChangeForm(data=request.POST, user=req_user)
     #     if form.is_valid():
     #         form.save()
     #         update_session_auth_hash(request, form.user)
@@ -716,6 +868,6 @@ def show_page(request,pk1):
     #         return redirect(reverse('change_password'))
 
     # else:
-    #     form = PasswordChangeForm(user=request.user)
+    #     form = PasswordChangeForm(user=req_user)
     #     args = {'form': form }
     #     return render(request, 'users/change_password.html', args)
