@@ -325,9 +325,6 @@ def remove_friend(request,pk):
 
 
 def welcome(request):
-    session = Session.objects.get(session_key=request.session._session_key)
-    uid = session.get_decoded().get('_auth_user_id')
-    req_user = User.objects.get(pk=uid)
     request.session['reverify']=None
     return render(request, 'users/welcome.html')
 
@@ -434,19 +431,14 @@ def otpsetup(request):
     session = Session.objects.get(session_key=request.session._session_key)
     uid = session.get_decoded().get('_auth_user_id')
     req_user = User.objects.get(pk=uid)
-    if req_user.is_verified()==True:
+    if request.user.is_verified()==True:
         return redirect(reverse('homepage'))
-
     totp=TOTPDevice.objects.get(user_id=uid)
     form_cls = partial(SimpleOTPRegistrationForm, req_user)
     temp=totp.config_url.replace("/", "%2F")
-    print(temp)
     return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp)})(request)
 
 def signup(request):
-    session = Session.objects.get(session_key=request.session._session_key)
-    uid = session.get_decoded().get('_auth_user_id')
-    req_user = User.objects.get(pk=uid)
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
