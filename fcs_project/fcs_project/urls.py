@@ -23,6 +23,9 @@ from django.contrib.auth.models import User
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.admin import OTPAdminSite
 from chat import views as chat_views
+from django.conf import settings
+from django.conf.urls.static import static 
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.conf.urls import (
 handler400, handler403, handler404, handler500
 )
@@ -86,3 +89,5 @@ urlpatterns = [
     path('confirm_accept_cash_request/(?P<pk>\d+)',user_views.confirm_accept_cash_request,name='confirm_accept_cash_request'),
     path('confirm_reject_cash_request/(?P<pk>\d+)',user_views.confirm_reject_cash_request,name='confirm_reject_cash_request'),
 ]
+urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

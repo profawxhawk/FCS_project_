@@ -27,6 +27,14 @@
                 {%endifequal%}
                 {%endfor%}
         </div>
+        <div class="container">
+            {% if pages %}
+            <h2>Pages</h2>
+            {% for obj in pages %}
+<h3><button class="btn btn-outline-info" type="submit"><a href="{% url 'show_page' pk1=obj.pk %}">{{obj.title}}</a></button></h3>
+{% endfor %}
+            {% endif %}
+        </div>
     
     </div>
 {% endblock %}

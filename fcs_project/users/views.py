@@ -72,6 +72,7 @@ def search_func(query,request):
     query = escape(strip_tags(query))
     users=User.objects.filter(Q(username__icontains=query))
     groups=Group.objects.filter(Q(name__icontains=query))
+    page=Pages.objects.filter(Q(title__icontains=query))
     friend_list_search=[]
     group_list=[]
     requests_sent = group_requests.objects.filter(user=request.user)
@@ -85,13 +86,13 @@ def search_func(query,request):
     for i in users:
         if Friend.objects.are_friends(request.user,i)==True:
             friend_list_search.append(i)
-    return friend_list_search,group_final,requests_sent
+    return friend_list_search,group_final,requests_sent,page
+    
 @otp_required
 def home(request):
     request.session['reverify']=None
     session = Session.objects.get(session_key=request.session._session_key)
     uid = session.get_decoded().get('_auth_user_id')
-    print(uid)
     if request.method=='GET':
         form = postform()
         post = posts.objects.all().order_by('-created')
@@ -119,7 +120,6 @@ def home(request):
                 sent_pk = obj.to
                 sent_user = User.objects.get(pk=sent_pk)
                 sent_obj.append(sent_user)
-
         received=[]
         received_obj = []
         for obj in messages:
@@ -128,14 +128,14 @@ def home(request):
                     received_obj.append(obj.author)
                     received.append(obj.author.pk)
         if query:
-            friend_list_search,group_final,requests_sent = search_func(query,request)
+            friend_list_search,group_final,requests_sent,page = search_func(query,request)
             requests_sent_to = []
             for tempo in requests_sent:
                 requests_sent_to.append(tempo.group)
-            args={'friend_search':friend_list_search,'groups_search':group_final,'requests_sent_to':requests_sent_to}
+            args={'friend_search':friend_list_search,'groups_search':group_final,'requests_sent_to':requests_sent_to,'pages':page}
             return render(request, 'users/search_display.html',args)
         args = {
-            'pending_id':pending_id,'form': form, 'posts': post, 'others':users,'sent':sent_req,'pending':unread_req,'friend_id':friend_id,'friend_iter':friends,'received':received,'received_obj':received_obj,'sent_obj':sent_obj,'sent':sent,
+            'pending_id':pending_id,'form': form, 'posts': post, 'others':users,'sent':sent_req,'pending':unread_req,'friend_id':friend_id,'friend_iter':friends,'received':received,'received_obj':received_obj,'sent_obj':sent_obj,'sent_messages':sent,
         }
         return render(request, 'users/homepage.html',args)
     else:
@@ -695,11 +695,8 @@ def create_page(request):
 @otp_required
 def show_page(request,pk1):
     page = Pages.objects.filter(pk=pk1)
-    if request.user.commercial_user==False:
-        return redirect(reverse('profilepage'))
-    else:
-        args = {'title':page[0].title,'body':page[0].content,'url':page[0].img.url}# pass title and body
-        return render(request, 'users/show_page.html', args)
+    args = {'title':page[0].title,'body':page[0].content,'url':page[0].img.url}# pass title and body
+    return render(request, 'users/show_page.html', args)
 
 
 # @otp_required
