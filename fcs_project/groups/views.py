@@ -5,6 +5,7 @@ from .forms import GroupCreationform
 from .models import Group,Group_user_relation,group_requests
 from users.models import premium_users,posts,User
 from users.forms import postform
+from django.contrib.sessions.models import Session
 # Create your views here.
 @otp_required
 def group_settings(request,pk):

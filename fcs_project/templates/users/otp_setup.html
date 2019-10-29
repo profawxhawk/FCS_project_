@@ -9,8 +9,10 @@
         <form method="POST">
         <div class="form-row"> {{ form.errors }} </div>
         {% csrf_token %}
+        {%if not verification%}
         <img src={{otpstring}} width="200"
         height="200"><br><br>
+        {% endif %}
         {{form.as_p}}
         {%if not verification%}
             <button class="btn btn-outline-info" type="submit">Login</button>

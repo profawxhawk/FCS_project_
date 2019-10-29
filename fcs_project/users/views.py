@@ -612,8 +612,6 @@ def reverify(request,plan,pk):
             return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan})
     else:
         return redirect(reverse('homepage'))
-    # return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True})(request)
-
 @otp_required
 def get_silver(request):
     session = Session.objects.get(session_key=request.session._session_key)

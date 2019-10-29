@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from users.models import User
 from django.urls import reverse
 import json
+from django.contrib.sessions.models import Session
 from django_otp.decorators import otp_required
 from friendship.models import Friend, Follow, Block,FriendshipRequest
 def index(request):
