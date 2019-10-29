@@ -19,8 +19,29 @@ from django_otp.forms import OTPTokenForm
 from django_otp import match_token
 from django.forms.utils import ErrorList
 from django.contrib.auth import views as auth_views
+from django.contrib.sessions.models import Session
 import sys
 import requests
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.utils.html import strip_tags,escape
+from django.db.models import Q
+from groups.models import Group,Group_user_relation,group_requests
+
+
+def handler404(request, *args, **argv):
+    response = render_to_response('404.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 404
+    return response
+
+
+def handler500(request, *args, **argv):
+    response = render_to_response('500.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 500
+    return response
+
 @login_required
 def logout_view(request):
     logout(request)
@@ -46,11 +67,30 @@ def show_groups(request):
         val=0
     return render(request, 'users/show_groups.html',{'number':val})
 
-
+def search_func(query,request):
+    query = escape(strip_tags(query))
+    users=User.objects.filter(Q(username__icontains=query))
+    groups=Group.objects.filter(Q(name__icontains=query))
+    friend_list_search=[]
+    group_list=[]
+    requests_sent = group_requests.objects.filter(user=request.user)
+    for i in groups:
+        temp=Group_user_relation.objects.filter(group=i,user=request.user)
+        if not temp:
+            group_list.append(0)
+        else:
+            group_list.append(1)
+    group_final=zip(groups, group_list)
+    for i in users:
+        if Friend.objects.are_friends(request.user,i)==True:
+            friend_list_search.append(i)
+    return friend_list_search,group_final,requests_sent
 @otp_required
 def home(request):
     request.session['reverify']=None
-    print(request.session['reverify'])
+    session = Session.objects.get(session_key=request.session._session_key)
+    uid = session.get_decoded().get('_auth_user_id')
+    print(uid)
     if request.method=='GET':
         form = postform()
         post = posts.objects.all().order_by('-created')
@@ -67,6 +107,14 @@ def home(request):
         pending_id=[]
         for obj in unread_req:
             pending_id.append(obj.from_user_id)
+        query = request.GET.get('query')
+        if query:
+            friend_list_search,group_final,requests_sent = search_func(query,request)
+            requests_sent_to = []
+            for tempo in requests_sent:
+                requests_sent_to.append(tempo.group)
+            args={'friend_search':friend_list_search,'groups_search':group_final,'requests_sent_to':requests_sent_to}
+            return render(request, 'users/search_display.html',args)
         args = {
             'pending_id':pending_id,'form': form, 'posts': post, 'others':users,'sent':sent_req,'pending':unread_req,'friend_id':friend_id,'friend_iter':friends
         }
@@ -100,7 +148,6 @@ def transaction_occur(request):
 def do_transactions(request,pk=None):
 
     if request.method == 'POST':
-        # transaction_req = transactions()
         form = get_transaction_amount(request.POST)
         if form.is_valid():
             t_amount = form['amount'].value()
@@ -142,7 +189,6 @@ def accept_money(request,pk):
 
 @otp_required
 def reject_money(request,pk):
-    print("\n\n",pk,"\n\n")
     transaction_req = transactions.objects.get(pk=pk)
     cur_user = transaction_req.from_user
     cur_user.account_balance = cur_user.account_balance + transaction_req.amount
@@ -436,3 +482,23 @@ def cancel_plan(request):
     cur_user.premium_user = False
     cur_user.save()
     return render(request, 'users/cancel_plan.html') 
+
+@otp_required
+def send_group_request(request,pk):
+    group_to_join = Group.objects.get(pk=pk)
+    cur_user = request.user
+    group_request1 = group_requests()
+    group_request1.user = cur_user
+    group_request1.group = group_to_join
+    group_request1.save()
+    return redirect(reverse('show_groups'))
+
+@otp_required
+def accept_group_request(request,pk):
+    group_to_join = Group.objects.get(pk=pk)
+    cur_user = request.user
+    group_request1 = group_requests()
+    group_request1.user = cur_user
+    group_request1.group = group_to_join
+    group_request1.save()
+    return redirect(reverse('show_groups'))

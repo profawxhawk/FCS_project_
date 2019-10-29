@@ -23,17 +23,21 @@ from django.contrib.auth.models import User
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp.admin import OTPAdminSite
 from chat import views as chat_views
+from django.conf.urls import (
+handler400, handler403, handler404, handler500
+)
 class OTPAdmin(OTPAdminSite):
     pass
-
+handler404 = 'users.views.handler404'
+handler500 = 'users.views.handler500'
 admin_site=OTPAdmin(name='OTPAdmin')
 admin_site.register(User)
 admin_site.register(TOTPDevice)
 urlpatterns = [
     path('otp_setup/',user_views.otpsetup,name='otpsetup'),
     path('cancel_plan/',user_views.cancel_plan,name='cancel_plan'),
-    path('view_friend/(?P<pk>\d+)',user_views.view_friend,name='view_friend'),
-    path('add_friend/(?P<pk>\d+)',user_views.add_friend,name='add_friend'),
+    path('view_friend/<int:pk>/',user_views.view_friend,name='view_friend'),
+    path('add_friend/<int:pk>/',user_views.add_friend,name='add_friend'),
     path('change_password/',user_views.changepass,name='change_password'),
     path('upgrade/',user_views.upgrade,name='upgrade'),
     path('silver_plan/',user_views.silver_plan,name='Silver_plan'),
@@ -41,7 +45,7 @@ urlpatterns = [
     path('get_silver/',user_views.get_silver,name='get_silver'),
     path('get_gold/',user_views.get_gold,name='get_gold'),
     path('get_platinum/',user_views.get_platinum,name='get_platinum'),
-    path('do_transactions/(?P<pk>\d+)',user_views.do_transactions,name='do_transactions'),
+    path('do_transactions/<int:pk>/',user_views.do_transactions,name='do_transactions'),
     path('transactions/',user_views.transaction_occur,name='transactions'),
     path('platinum_plan/',user_views.platinum_plan,name='Platinum_plan'),
     path('editprofile/',user_views.editprofile,name='editprofile'),
@@ -51,20 +55,21 @@ urlpatterns = [
     path('home',user_views.home,name='homepage'),
     path('',user_views.welcome, name='home'),
     path('/',user_views.welcome, name='home'),
-    path('timeline/(?P<pk>\d+)',user_views.timeline,name='Timeline'),
+    path('timeline/<int:pk>/',user_views.timeline,name='Timeline'),
     path('login/', auth_views.LoginView.as_view(authentication_form=SimpleOTPAuthenticationForm,template_name='users/login.html'), name='login'),
-    path('accept_money/(?P<pk>\d+)',user_views.accept_money,name='accept_money'),
-    path('reject_money/(?P<pk>\d+)',user_views.reject_money,name='reject_money'),
+    path('accept_money/<int:pk>/',user_views.accept_money,name='accept_money'),
+    path('reject_money/<int:pk>/',user_views.reject_money,name='reject_money'),
     path('logout/', user_views.logout_view, name='logout'),
     path('signup/', user_views.signup, name='signup'),
-    path('reverify(?P<plan>[^/]+)(?P<pk>\d+)/', user_views.reverify, name='otp_reverify'),
-    path('confirm_transactions(?P<pk>\d+)/', user_views.confirm_transactions, name='confirm_transactions'),
+    path('reverify(?P<plan>[^/]+)/<int:pk>/', user_views.reverify, name='otp_reverify'),
+    path('confirm_transactions/<int:pk>/', user_views.confirm_transactions, name='confirm_transactions'),
     path('admin/', admin.site.urls),
     path('adminotp/', admin_site.urls),
     path('show_groups',user_views.show_groups,name="show_groups"),
-    path('accept_request/(?P<pk>\d+)',user_views.accept_request,name='accept_request'),
-    path('reject_request/(?P<pk>\d+)',user_views.reject_request,name='reject_request'),
-    path('remove_friend/(?P<pk>\d+)',user_views.remove_friend,name='remove_friend'),
-    path('room/(?P<pk>\d+)',chat_views.room,name='room'),
-    path('groups/',include('groups.urls'))
+    path('accept_request/<int:pk>/',user_views.accept_request,name='accept_request'),
+    path('reject_request/<int:pk>/',user_views.reject_request,name='reject_request'),
+    path('remove_friend/<int:pk>/',user_views.remove_friend,name='remove_friend'),
+    path('room/<int:pk>/',chat_views.room,name='room'),
+    path('groups/',include('groups.urls')),
+    path('send_group_request/<int:pk>',user_views.send_group_request,name='send_group_request'),
 ]

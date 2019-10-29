@@ -1,0 +1,42 @@
+{% extends 'groups/base.html' %}
+{% block head %}
+<title>Group Settings</title>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h2>Group details</h2>
+    <h3>Number of people : {{no_of_users}}</h3>
+    <h3>Price : {{price}}</h3>
+    {% ifequal hid 1%}
+    <h2>Member Permissions</h2>
+    {%for i,add_reject in members%}
+    <div>
+    <h3  style="display: inline;margin: 10px;">{{i.username}}</h3><form  style="display: inline;" method="post">
+        {%if not add_reject %}
+        <input type="checkbox" name="add_reject">add_reject
+        {% else %}
+        <input type="checkbox" name="add_reject" checked="checked">add_reject
+        {% endif %}
+        <input type="hidden" name="user" value="{{ i.id }}">
+        <input class="btn btn-outline-info" type="submit" value="Submit">
+        {% csrf_token %}
+        </form>
+    </div>
+    {%endfor%}
+    {% endifequal %}
+    {% if desperate_users %}
+    <h2>Join Requests</h2>
+    {% for despo_i in desperate_users %}
+    <h3>{{ despo_i.user.username }}
+    <button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'accept_group_request' pk=despo_i.pk %}">Accept</a></button>
+    <button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'reject_group_request' pk=despo_i.pk %}">Reject</a></button>
+</h3>
+    <br><br>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}
+
+</body>
+</html>

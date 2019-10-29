@@ -1,0 +1,15 @@
+{% extends 'users/welcome.html' %}
+{% block head %}
+<title>Display_groups</title>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    {% for i in groups%}
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'group_wall' pk=i.id %}">{{i.name}}</a></button><br><br>
+{%endfor%}
+</div>
+{% endblock %}
+
+</body>
+</html>

@@ -22,8 +22,8 @@
                         {% if user.is_authenticated %}
                         <ul class="navbar-nav">
                             <li class="nav-item"><a class="nav-link" href="{% url 'homepage' %}" style="color: #FFFFFF;">Home</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'profilepage' %}" style="color: #FFFFFF;">Group Wall</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'homepage' %}" style="color: #FFFFFF;">Group settings</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'group_wall' pk=group.id %}" style="color: #FFFFFF;">Group Wall</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'group_settings' pk=group.id %}" style="color: #FFFFFF;">Group settings</a></li>
                         </ul>
                         <div class="collapse navbar-collapse justify-content-end" id="navbarCollapse">
                             <ul class="navbar-nav my-2 my-lg-0">

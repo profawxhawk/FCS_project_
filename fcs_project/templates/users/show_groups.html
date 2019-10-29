@@ -10,6 +10,6 @@
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'create_group' %}">Create Group</a></button><br><br>
 {%endif%}
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'group_created' %}">Groups you created</a></button><br><br>
-<button class="btn btn-outline-info" type="submit"><a >Groups you are a member of</a></button><br><br>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'groups_you_are_member_of' %}">Groups you are a member of</a></button><br><br>
 </div>
 {% endblock %}

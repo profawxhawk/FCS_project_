@@ -1,0 +1,32 @@
+{% extends 'users/welcome.html' %}
+{% block body %}
+    <div class="container">
+        <h1>Search Results</h1>
+        <div class="container">
+        {%if friend_search %}
+        <h2>Friends</h2>
+        {% for x in friend_search %}
+        <h3><a href="{% url 'view_friend' pk=x.pk %}">{{ x.username }} </a><button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'remove_friend' pk=x.pk %}">Remove friend</a></h3>
+        {%endfor%}
+        {%endif%}
+    </div>
+        <div class="container">
+                {% for group,value in groups_search %}
+                {% ifequal forloop.counter 1%}
+                <h2>Groups</h2>
+                {%endifequal%}
+                {% ifequal value 0%}
+                {% if group in requests_sent_to %}
+                <h3>{{ group.name }}<button class="btn btn-outline-info" type="submit"  style="margin:10px;">Sent</button></h3>
+                {% else %}
+                <h3>{{ group.name }}<button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'send_group_request' pk=group.pk %}">Send Request</a></button></h3>
+                {% endif %}
+                {%endifequal%}
+                {% ifequal value 1%}
+                <h3>{{ group.name }}<button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'group_wall' pk=group.id %}">Go to group wall</a></button></h3>
+                {%endifequal%}
+                {%endfor%}
+        </div>
+    
+    </div>
+{% endblock %}
