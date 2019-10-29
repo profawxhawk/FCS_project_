@@ -17,7 +17,7 @@
 	Current account balance: {{user.account_balance}}<br><br>
 	Balance after payment: {{ user.account_balance|add:"-100" }}<br><br>
 	{% if not user.premium_user %}
-	<button class="btn btn-outline-info" type="submit"><a href="{% url 'otp_reverify' plan='get_gold' pk=None %}">Proceed with payment</a></button>
+	<button class="btn btn-outline-info" type="submit"><a href="{% url 'otp_reverify' plan='get_gold' pk=1036372758 %}">Proceed with payment</a></button>
 	{% endif %}
 	<br><br>
 	</div>

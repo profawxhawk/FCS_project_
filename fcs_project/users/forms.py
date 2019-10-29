@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
-from .models import User,UserProfile,posts,transactions
+from .models import User,UserProfile,posts,transactions,amount,Pages
 from django_otp.forms import OTPAuthenticationForm,OTPTokenForm
 class SimpleOTPRegistrationForm(OTPTokenForm):
     otp_device = forms.CharField(required=False, widget=forms.HiddenInput)
@@ -57,3 +57,13 @@ class get_transaction_amount(forms.ModelForm):
     class Meta:
         model = transactions
         fields = ('amount',)
+
+class page_form(forms.ModelForm):
+    class Meta:
+        model = Pages
+        fields = ('title','content','img')
+
+class get_amount(forms.ModelForm):
+    class Meta:
+        model = amount
+        fields = ('amt',)

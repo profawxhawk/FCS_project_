@@ -1,9 +1,11 @@
 {% extends 'users/welcome.html' %}
 {% block body %}
 <div class="container">
-<h1>Send money</h1>
+<h1>Send/Request money</h1>
     {% for x in friend_iter %}
-    <h3><a href="{% url 'view_friend' pk=x.pk %}">{{ x.username }} </a><button class="btn btn-outline-info" type="submit"><a href="{% url 'do_transactions' pk=x.pk %}">Send Money</a></button></h3>
+    <h3><a href="{% url 'view_friend' pk=x.pk %}">{{ x.username }} </a><button class="btn btn-outline-info" type="submit"><a href="{% url 'do_transactions' pk=x.pk %}">Send Money</a></button>
+    <button class="btn btn-outline-info" type="submit"><a href="{% url 'request_cash' pk=x.pk %}">Request Money</a></button>
+</h3>
     {% endfor %}
 </div>
 <!-- <div class="container">
@@ -16,11 +18,22 @@
 </div> -->
 
 <div class="container">
-    <h1>Pending Requests</h1>
+    {% if pending %}
+    <h1>Pending Requests to receive money</h1>
     {% for x in pending %}
     <h3>{{ x.from_user }} wants to give $ {{x.amount}} to you <button class="btn btn-outline-info" type="submit" style="margin: 10px;"><a href="{% url 'accept_money' pk=x.pk %}">Accept</a></button>
         <button class="btn btn-outline-info" type="submit"><a href="{% url 'reject_money' pk=x.pk %}">Reject</a></button></h3>
     {% endfor %}
+
+    {% endif %}
+
+    {% if pending_cash_requests %}
+    <h1>Pending Requests to send money</h1>
+    {% for x in pending_cash_requests %}
+    <h3>{{ x.from_user }} requests $ {{x.amount}} from you <button class="btn btn-outline-info" type="submit" style="margin: 10px;"><a href="{% url 'accept_cash_request' pk=x.pk %}">Accept</a></button>
+        <button class="btn btn-outline-info" type="submit"><a href="{% url 'reject_cash_request' pk=x.pk %}">Reject</a></button></h3>
+    {% endfor %}
+    {% endif %}
 
 </div>
 

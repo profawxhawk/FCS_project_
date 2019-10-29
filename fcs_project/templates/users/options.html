@@ -5,7 +5,7 @@
 
 {% block body %}
 <div class="container">
-<button class="btn btn-outline-info" type="submit">Add money to wallet</button>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'add_money' %}">Add money to wallet</a></button>
 <br><br>
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'transactions' %}">Transactions</a></button><br><br>
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'show_groups' %}">See groups</a></button><br><br>
@@ -13,9 +13,13 @@
 {% if not user.premium_user %}
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'upgrade' %}">Upgrade</a></button>
 {% endif %}
-{% if user.premium_user %}
+{% if user.premium_user or user.commercial_user %}
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'cancel_plan' %}">Cancel current Plan</a></button><br><br>
-<!-- <button class="btn btn-outline-info" type="submit"><a href="{% url 'show_groups' %}">Your Groups</a></button> -->
 {% endif %}
+{% if user.commercial_user %}
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'my_pages' %}">My Pages</a></button><br><br>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'create_page' %}">Create Page</a></button><br><br>
+{% endif %}
+<!-- <button class="btn btn-outline-info" type="submit"><a href="{% url 'show_groups' %}">Your Groups</a></button> -->
 </div>
 {% endblock %}

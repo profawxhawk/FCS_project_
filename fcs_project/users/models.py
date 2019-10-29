@@ -8,6 +8,8 @@ from django.db.models.signals import post_save
 class User(AbstractUser):
     premium_user=models.BooleanField(default=False)
     account_balance=models.FloatField(default=1000.0)
+    commercial_user=models.BooleanField(default=False)
+    bank_account=models.FloatField(default=100000.0)
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
@@ -40,10 +42,31 @@ class premium_users(models.Model):
     number_of_groups = models.IntegerField(default=2)
     current_number_of_groups = models.IntegerField(default=0)
 
+class commercial_users(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,unique=True)
+    number_of_groups = models.IntegerField(default=2)
+    current_number_of_groups = models.IntegerField(default=0)
+
 class transactions(models.Model):
     # transaction_id = models.IntegerField(primary_key=True)
     from_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='sending_from')
     to_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='sending_to')
     amount = models.FloatField(default=0.0)
+
+class amount(models.Model):
+    amt = models.FloatField(default=0.0)
+
+class money_requests(models.Model):
+    from_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='requester')
+    to_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='requestee')
+    amount = models.FloatField(default=0.0)
+
+class Pages(models.Model):
+    #user_id = models.IntegerField(default=1)
+    user = models.ForeignKey(User,on_delete=models.CASCADE,unique=False)
+    title = models.CharField(max_length=30,default="page")
+    # img
+    content = models.CharField(max_length=250,default="Welcome to my page!")
+    img = models.ImageField(upload_to='images/',default='None')
 
 post_save.connect(create_profile, sender=User)

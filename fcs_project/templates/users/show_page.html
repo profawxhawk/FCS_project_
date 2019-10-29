@@ -1,0 +1,21 @@
+{% extends 'users/welcome.html' %}
+<head>
+{% block head %}
+<title>{{title}}</title>
+{% endblock %}
+</head>
+{% block body %}
+<div class="container">
+	
+		{{title}}
+		</div>
+
+<div class="container">
+
+{{body}}
+</div>
+<div class="container">
+<img src={{url}}>
+
+</div>
+{% endblock %}
