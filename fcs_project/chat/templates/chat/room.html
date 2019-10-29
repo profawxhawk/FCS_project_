@@ -52,7 +52,7 @@
     var userid = {{userid}}
     var toid = {{toid}}
     var chatSocket = new ReconnectingWebSocket(
-        'ws://' + window.location.host +
+        'wss://' + window.location.host +
         '/ws/chat/' + roomName + '/');
 
     chatSocket.onopen = function(e) {

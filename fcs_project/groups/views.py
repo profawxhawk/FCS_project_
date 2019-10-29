@@ -116,7 +116,7 @@ def accept_group_request(request,pk):
     request1.delete()
     groups = Group.objects.filter(owner_id=request.user.id)
     args={'groups':groups}
-    return render(request, 'groups/groups_display.html', args)
+    return redirect(reverse('group_settings',kwargs={'pk':pk}))
 
 @otp_required
 def reject_group_request(request,pk):
@@ -124,7 +124,7 @@ def reject_group_request(request,pk):
     request1.delete()
     groups = Group.objects.filter(owner_id=request.user.id)
     args={'groups':groups}
-    return render(request, 'groups/groups_display.html', args)
+    return redirect(reverse('group_settings',kwargs={'pk':pk}))
 
 @otp_required
 def groups_you_are_member_of(request):
