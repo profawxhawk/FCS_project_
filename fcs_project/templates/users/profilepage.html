@@ -12,10 +12,18 @@
         <p><h3>Firstname:{{user.first_name}}</h3></p>
         <p><h3>Lastname:{{user.last_name}}</h3></p>
         <p><h3>Your account balance:{{user.account_balance}}</h3></p>
+        <p><h3>Your bank account:{{user.bank_account}}</h3></p>
         <p><h3>Your description:{{user.userprofile.description}}</h3></p>
         <p><h3>Your City:{{user.userprofile.city}}</h3></p>
         <p><h3>Your phone:{{user.userprofile.phone}}</h3></p>
+        {% if user.commercial_user %}
+        <p><h3>Type of user: Commercial User</h3></p>
+        {% elif user.commercial_user %}
+        <p><h3>Type of user: Premium User</h3></p>
         <p><h3>Your Plan:{{plan.0}}</h3></p>
+        {% else %}
+        <p><h3>Type of user: Basic User</h3></p>
+        {% endif %}
         <p><h3>Your privacy settings:{{user.userprofile.privacy}}</h3></p>
         <button class="btn btn-outline-info" type="submit"><a href="{% url 'editprofile' %}">edit profile</a></button>
     </p> 

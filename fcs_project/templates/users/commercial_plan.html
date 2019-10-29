@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,11 +11,11 @@
 
 	{% block body %}
 	<div class="container">
-	Silver Plan<br><br>
+	Commercial Plan<br><br>
 	Current account balance: {{user.account_balance}}<br><br>
-	Balance after payment: {{ user.account_balance|add:"-50" }}<br><br>
-	{% if not user.premium_user %}
-	<button class="btn btn-outline-info" type="submit"><a href="{% url 'otp_reverify' plan='get_silver' pk=1036372758%}">Proceed with payment</a></button>
+	Balance after payment: {{ user.account_balance|add:"-5000" }}<br><br>
+	{% if not user.commercial_user %}
+	<button class="btn btn-outline-info" type="submit"><a href="{% url 'otp_reverify' plan='get_commercial' pk=1036372758 %}">Proceed with payment</a></button>
 	{% endif %}
 	<br><br>
 	</div>

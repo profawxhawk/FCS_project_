@@ -1,0 +1,17 @@
+{% extends 'users/welcome.html' %}
+{% block head %}
+<title>Request Cash</title>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+	
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+    <br>
+</div>
+
+{% endblock %}

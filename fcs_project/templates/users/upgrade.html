@@ -1,14 +1,24 @@
-{% extends 'users/welcome.html' %}
-{% block head %}
-<title>Upgrade</title>
-{% endblock %}
 
-{% block body %}
-<div class="container">
-	{% for i in plans%}
-<button class="btn btn-outline-info" type="submit"><a href="{% url i|add:"_plan" %}">{{i}} Plan</a></button><br><br>
-{%endfor%}
-</div>
-{% endblock %}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	{% extends 'users/welcome.html' %}
+	{% block head %}
+	<title>Upgrade</title>
+	{% endblock %}
+
+	{% block body %}
+	<div class="container">
+		{% for i in plans%}
+	<button class="btn btn-outline-info" type="submit"><a href="{% url i|add:"_plan" %}">{{i}} Plan</a></button><br><br>
+	{%endfor%}
+	
+	</div>
+	{% endblock %}
+
 </body>
 </html>
