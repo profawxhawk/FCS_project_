@@ -20,6 +20,7 @@ from django_otp import match_token
 from django.forms.utils import ErrorList
 from django.contrib.auth import views as auth_views
 from django.contrib.sessions.models import Session
+from binascii import unhexlify
 import sys
 import requests
 from chat.models import Message
@@ -595,8 +596,9 @@ def reverify(request,plan,pk):
         temp=totp.config_url.replace("/", "%2F")
         if request.method == 'POST':   
             if form.is_valid():
-                otp_token=form.cleaned_data['otp_token']
+                otp_token=(form.cleaned_data['otp_token'])
                 result=match_token(req_user,otp_token)
+                print(result)
                 if not result:
                     errors = form._errors.setdefault("Incorrect OTP", ErrorList())   
                     return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan,'pk':pk})
@@ -696,12 +698,18 @@ def cancel_plan(request):
     session = Session.objects.get(session_key=request.session._session_key)
     uid = session.get_decoded().get('_auth_user_id')
     req_user = User.objects.get(pk=uid)
-    if req_user.premium_user==False:
+    if req_user.premium_user==False and req_user.commercial_user==False:
         return redirect(reverse('profilepage'))
-    premium_users.objects.filter(user=req_user).delete()
-    cur_user = req_user
-    cur_user.premium_user = False
-    cur_user.save()
+    if req_user.premium_user==True:
+        premium_users.objects.filter(user=req_user).delete()
+        cur_user = req_user
+        cur_user.premium_user = False
+        cur_user.save()
+    else:
+        commercial_users.objects.filter(user=req_user).delete()
+        cur_user = req_user
+        cur_user.commercial_user = False
+        cur_user.save()
     return render(request, 'users/cancel_plan.html') 
 
 

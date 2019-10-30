@@ -1,8 +1,6 @@
 {% extends 'users/welcome.html' %}
 {% block body %}
-
- 
-    <div class="container"onload="load()" >
+    <div class="container" onload="load()" >
         {%if not verification%}
         <h3>Use Google Authenticator App to get OTP. Please do not skip this step ... your account will be locked forever otherwise</h3>
         {% endif %}
@@ -13,12 +11,45 @@
         <img src={{otpstring}} width="200"
         height="200"><br><br>
         {% endif %}
-        {{form.as_p}}
+        <label>Otp Token:</label>
+        {{form.otp_token}}
+        </br></br>
+        <script>
+                function input(e) {
+                var Input = document.getElementById("id_otp_token");
+                Input.value = Input.value + e.value;
+            }
+            function del1() {
+                var Input = document.getElementById("id_otp_token");
+                Input.value="";
+            }
+            function del() {
+                var Input = document.getElementById("id_otp_token");
+                Input.value = Input.value.substr(0, Input.value.length - 1);
+            }
+            </script>
+        <div id="VirtualKey">
+                <input id="btn1" type="button" value="1" onclick="input(this);" />
+                <input id="btn2" type="button" value="2" onclick="input(this);" />
+                <input id="btn3" type="button" value="3" onclick="input(this);" />
+                <input id="btn4" type="button" value="4" onclick="input(this);" />
+                <input id="btn5" type="button" value="5" onclick="input(this);" />
+                <input id="btn6" type="button" value="6" onclick="input(this);" />
+                <input id="btn7" type="button" value="7" onclick="input(this);" />
+                <input id="btn8" type="button" value="8" onclick="input(this);" />
+                <input id="btn9" type="button" value="9" onclick="input(this);" />
+                <input id="btn0" type="button" value="0" onclick="input(this)" />
+                <input id="btnDel" type="button" value="Backspace" onclick="del();" />
+                <input id="clear1" type="button" value="Clear" onclick="del1();" />
+            </div>
+        </br>
+            <div class="container">
         {%if not verification%}
-            <button class="btn btn-outline-info" type="submit">Login</button>
+            <button class="btn btn-outline-info" type="submit" >Login</button>
             {% else %}
             <button class="btn btn-outline-info" type="submit">Verify</button>
             {% endif %}
+        </div>
         </form>
     </div>
 {% endblock %}

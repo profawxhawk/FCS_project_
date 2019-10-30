@@ -16,7 +16,7 @@ def room(request,pk):
     uid = session.get_decoded().get('_auth_user_id')
     req_user = User.objects.get(pk=uid)
     other_user = User.objects.get(pk=pk)
-    if req_user.commercial_user==True or Friend.objects.are_friends(req_user, other_user)==True:
+    if req_user.commercial_user==True or ( (req_user.premium_user==True or other_user.premium_user==True) and Friend.objects.are_friends(req_user, other_user)==True):
         a = min(int(uid),int(pk))
         b = max(int(pk),int(uid))
         return render(request, 'chat/room.html', {

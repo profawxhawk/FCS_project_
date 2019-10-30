@@ -4,7 +4,7 @@ from groups.models import *
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.signals import post_save
-
+from django.core.validators import MaxValueValidator
 class User(AbstractUser):
     premium_user=models.BooleanField(default=False)
     account_balance=models.FloatField(default=1000.0)
@@ -16,7 +16,7 @@ class UserProfile(models.Model):
     privacy = models.BooleanField(default=False)
     description = models.CharField(max_length=200,default='None')
     city = models.CharField(max_length=200,default='None')
-    phone=models.IntegerField(default=0)
+    phone=models.IntegerField(default=0,validators=[MaxValueValidator(9999999999)])
 
 class posts(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='owner',default=None,null=True)
@@ -51,10 +51,10 @@ class transactions(models.Model):
     # transaction_id = models.IntegerField(primary_key=True)
     from_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='sending_from')
     to_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='sending_to')
-    amount = models.FloatField(default=0.0)
+    amount = models.FloatField(default=0.0, validators=[MaxValueValidator(9999999.9)])
 
 class amount(models.Model):
-    amt = models.FloatField(default=0.0)
+    amt = models.FloatField(default=0.0,validators=[MaxValueValidator(9999999.9)])
 
 class money_requests(models.Model):
     from_user = models.ForeignKey(User,on_delete=models.CASCADE,related_name='requester')

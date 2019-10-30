@@ -6,16 +6,18 @@ from django_otp.forms import OTPAuthenticationForm,OTPTokenForm
 class SimpleOTPRegistrationForm(OTPTokenForm):
     otp_device = forms.CharField(required=False, widget=forms.HiddenInput)
     otp_challenge = forms.CharField(required=False, widget=forms.HiddenInput)
+    otp_token = forms.CharField(required=False,max_length=6,widget=forms.TextInput(attrs={'readonly':'readonly'}))
 
 class otpform(forms.Form):
-    otp_token=forms.CharField(required=False)
+    otp_token=forms.CharField(required=False,max_length=6,widget=forms.TextInput(attrs={'readonly':'readonly'}))
 
 class SimpleOTPAuthenticationForm(OTPAuthenticationForm):
     otp_device = forms.CharField(required=False, widget=forms.HiddenInput)
     otp_challenge = forms.CharField(required=False, widget=forms.HiddenInput)
+ 
 
 class postform(forms.ModelForm):
-    post = forms.CharField(widget=forms.TextInput(
+    post = forms.CharField(max_length=300,widget=forms.TextInput(
         attrs={
             'class': 'form-control',
             'placeholder': 'Write a post...'
