@@ -29,7 +29,7 @@ from django.template import RequestContext
 from django.utils.html import strip_tags,escape
 from django.db.models import Q
 from groups.models import Group,Group_user_relation,group_requests
-
+from django.db import transaction
 
 def handler404(request, *args, **argv):
     response = render_to_response('404.html', {},
@@ -57,7 +57,7 @@ def options(request):
     try:
         return render(request, 'users/options.html')
     except:
-        return redirect(reverse('homepage')
+        return redirect(reverse('homepage'))
 
 @otp_required
 def show_groups(request):
@@ -77,8 +77,9 @@ def show_groups(request):
         return render(request, 'users/show_groups.html',{'number':val})
     except:
         return redirect(reverse('homepage'))
+        
 @otp_required
-def search_func(query,request):
+def search_func(request,query,user1):
     try:
         query = escape(strip_tags(query))
         users=User.objects.filter(Q(username__icontains=query))
@@ -86,25 +87,24 @@ def search_func(query,request):
         page=Pages.objects.filter(Q(title__icontains=query))
         friend_list_search=[]
         group_list=[]
-        requests_sent = group_requests.objects.filter(user=request.user)
+        requests_sent = group_requests.objects.filter(user=user1)
         for i in groups:
-            temp=Group_user_relation.objects.filter(group=i,user=request.user)
+            temp=Group_user_relation.objects.filter(group=i,user=user1)
             if not temp:
                 group_list.append(0)
             else:
                 group_list.append(1)
         group_final=zip(groups, group_list)
         for i in users:
-            if Friend.objects.are_friends(request.user,i)==True:
+            if Friend.objects.are_friends(user1,i)==True:
                 friend_list_search.append(i)
         return friend_list_search,group_final,requests_sent,page
     except:
         return redirect(reverse('homepage'))
     
 @otp_required
-@otp_required
 def home(request):
-    try:
+    # try:
         request.session['reverify']=None
         if request.method=='GET':
             form = postform()
@@ -140,8 +140,9 @@ def home(request):
                     if obj.author.pk not in received:
                         received_obj.append(obj.author)
                         received.append(obj.author.pk)
+            user1=User.objects.get(pk=request.user.id)
             if query:
-                friend_list_search,group_final,requests_sent,page = search_func(query,request)
+                friend_list_search,group_final,requests_sent,page = search_func(request,query,user1)
                 requests_sent_to = []
                 for tempo in requests_sent:
                     requests_sent_to.append(tempo.group)
@@ -163,10 +164,9 @@ def home(request):
                 return redirect(reverse('homepage'))
             args = {'form': form}
             return render(request, 'users/homepage.html',args)
-    except:
-        return redirect(reverse('homepage'))
+    # except:
+        # return redirect(reverse('homepage'))
 
-@otp_required
 @otp_required
 def transaction_occur(request):
     try:
@@ -250,7 +250,7 @@ def accept_money(request,pk):
 
 @otp_required
 def confirm_add_money(request):
-    try:
+    # try:
         if request.session['reverify']==1:
             with transaction.atomic():
                 user1 = User.objects.select_for_update().get(pk=request.user.id)
@@ -266,8 +266,8 @@ def confirm_add_money(request):
         else:
             request.session['reverify']=None
             return redirect(reverse('homepage'))
-    except:
-        return redirect(reverse('homepage'))
+    # except:
+        # return redirect(reverse('homepage'))
 
 @otp_required
 def add_money(request):
@@ -287,7 +287,7 @@ def add_money(request):
     except:
         return redirect(reverse('homepage'))
 
- @otp_required
+@otp_required
 def reject_money(request,pk):
     try:  
         try:
@@ -673,7 +673,7 @@ def reverify(request,plan,pk):
             return redirect(reverse('homepage'))
     except:
         return redirect(reverse('homepage'))
-        @otp_required
+@otp_required
 def get_silver(request):
     try:
         user2 = User.objects.get(pk=request.user.id)
@@ -849,6 +849,29 @@ def accept_cash_request(request,pk):
     except:
         return redirect(reverse('homepage'))
 
+
+@otp_required
+def del_page(request):
+    if request.user.commercial_user==False:
+        return redirect(reverse('profilepage'))
+    else:
+        lis = Pages.objects.filter(user_id=request.user.id)
+        print(lis)
+        args = {'lis':lis,}
+        return render(request, 'users/del_page.html', args)
+
+
+@otp_required
+def delete_page(request,pk1):
+    if request.user.commercial_user==False:
+        return redirect(reverse('profilepage'))
+    else:
+        Pages.objects.get(pk=pk1).delete()
+        lis = Pages.objects.filter(user_id=request.user.id)
+        print(lis)
+        args = {'lis':lis,}
+        return render(request, 'users/del_page.html', args)
+
 @otp_required
 def confirm_accept_cash_request(request,pk):
     try:
@@ -950,24 +973,3 @@ def show_page(request,pk1):
     except:
         return redirect(reverse('homepage'))
 
-
-# @otp_required
-# def pages(request):
-#     if request.user.commercial_user==False:
-#         return redirect(reverse('profilepage'))
-#     else:
-#         args = {}
-#         return render(request, 'users/my_pages.html', args)
-    # if request.method == 'POST':
-    #     form = PasswordChangeForm(data=request.POST, user=request.user)
-    #     if form.is_valid():
-    #         form.save()
-    #         update_session_auth_hash(request, form.user)
-    #         return redirect(reverse('profilepage'))
-    #     else:
-    #         return redirect(reverse('change_password'))
-
-    # else:
-    #     form = PasswordChangeForm(user=request.user)
-    #     args = {'form': form }
-    #     return render(request, 'users/change_password.html', args)
