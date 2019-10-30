@@ -10,6 +10,7 @@ class User(AbstractUser):
     account_balance=models.FloatField(default=1000.0)
     commercial_user=models.BooleanField(default=False)
     bank_account=models.FloatField(default=100000.0)
+    number_of_transactions = models.IntegerField(default=15)
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)

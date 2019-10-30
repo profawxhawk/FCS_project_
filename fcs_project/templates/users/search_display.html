@@ -19,7 +19,7 @@
                 {% if group in requests_sent_to %}
                 <h3>{{ group.name }}<button class="btn btn-outline-info" type="submit"  style="margin:10px;">Sent</button></h3>
                 {% else %}
-                <h3>{{ group.name }}<button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'send_group_request' pk=group.pk %}">Send Request</a></button></h3>
+                <h3>{{ group.name }}<button class="btn btn-outline-info" type="submit"  style="margin:10px;"><a href="{% url 'send_group_request' pk=group.pk %}">Send Request</a></button>Price: {{group.price}}</h3>
                 {% endif %}
                 {%endifequal%}
                 {% ifequal value 1%}
