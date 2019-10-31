@@ -70,4 +70,8 @@ class Pages(models.Model):
     content = models.CharField(max_length=250,default="Welcome to my page!")
     img = models.ImageField(upload_to='images/',default='None')
 
+class Keys(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,unique=True)
+    pub_key= models.CharField(max_length=1024,default=None)
+
 post_save.connect(create_profile, sender=User)

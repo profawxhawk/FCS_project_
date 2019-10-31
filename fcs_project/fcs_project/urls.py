@@ -33,6 +33,8 @@ class OTPAdmin(OTPAdminSite):
     pass
 handler404 = 'users.views.handler404'
 handler500 = 'users.views.handler500'
+handler403 = 'users.views.handler403'
+handler400 = 'users.views.handler400'
 admin_site=OTPAdmin(name='OTPAdmin')
 admin_site.register(User)
 admin_site.register(TOTPDevice)
@@ -69,8 +71,6 @@ urlpatterns = [
     path('signup/', user_views.signup, name='signup'),
     path('reverify(?P<plan>[^/]+)/<int:pk>/', user_views.reverify, name='otp_reverify'),
     path('confirm_transactions/<int:pk>/', user_views.confirm_transactions, name='confirm_transactions'),
-    path('admin/', admin.site.urls),
-    path('adminotp/', admin_site.urls),
     path('show_groups',user_views.show_groups,name="show_groups"),
     path('accept_request/<int:pk>/',user_views.accept_request,name='accept_request'),
     path('reject_request/<int:pk>/',user_views.reject_request,name='reject_request'),

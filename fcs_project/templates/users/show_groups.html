@@ -9,6 +9,10 @@
 <h3>You can create {{number}} groups</h3><br><br>
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'create_group' %}">Create Group</a></button><br><br>
 {%endif%}
+{%ifequal number "Infinite" %}
+<h3>You can create {{number}} groups</h3><br><br>
+<button class="btn btn-outline-info" type="submit"><a href="{% url 'create_group' %}">Create Group</a></button><br><br>
+{%endifequal%}
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'group_created' %}">Groups you created</a></button><br><br>
 <button class="btn btn-outline-info" type="submit"><a href="{% url 'groups_you_are_member_of' %}">Groups you are a member of</a></button><br><br>
 </div>

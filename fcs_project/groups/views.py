@@ -10,7 +10,6 @@ from django.contrib.sessions.models import Session
 @otp_required
 def group_settings(request,pk):
     try:
-        
         if Group_user_relation.objects.filter(user_id=request.user.id,group_id=pk):
             try:
                 group1 = Group.objects.get(pk=pk)
@@ -137,6 +136,9 @@ def accept_group_request(request,pk):
             return redirect(reverse('homepage'))
         group1 = request1.group
         user1 = request1.user
+        owner=group1.owner
+        owner.account_balance+=group1.price
+        owner.save()
         group_user1 = Group_user_relation()
         group_user1.group = group1
         group_user1.user = user1

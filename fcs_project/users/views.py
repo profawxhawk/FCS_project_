@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django_otp.decorators import otp_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from .models import posts,User, friend_req, posts,map_to_username,premium_users,transactions,commercial_users,Pages
+from .models import posts,User, friend_req, posts,map_to_username,premium_users,transactions,commercial_users,Pages,Keys,money_requests
 from friendship.models import Friend, Follow, Block,FriendshipRequest
 from django_otp import devices_for_user
 from functools import partial
@@ -30,19 +30,17 @@ from django.utils.html import strip_tags,escape
 from django.db.models import Q
 from groups.models import Group,Group_user_relation,group_requests
 from django.db import transaction
+from Crypto.PublicKey import RSA
 
-def handler404(request, *args, **argv):
-    response = render_to_response('404.html', {},
-                                  context_instance=RequestContext(request))
-    response.status_code = 404
-    return response
+def handler404(request, exception):
+    return render(request, 'users/404.html', status=404)
+def handler500(request):
+    return render(request, 'users/500.html', status=500)
 
-
-def handler500(request, *args, **argv):
-    response = render_to_response('500.html', {},
-                                  context_instance=RequestContext(request))
-    response.status_code = 500
-    return response
+def handler400(request, exception):
+    return render(request, 'users/400.html', status=400)
+def handler403(request, exception):
+    return render(request, 'users/403.html', status=403)
 
 @login_required
 def logout_view(request):
@@ -59,6 +57,8 @@ def options(request):
     except:
         return redirect(reverse('homepage'))
 
+
+# tobe
 @otp_required
 def show_groups(request):
     try:
@@ -74,6 +74,7 @@ def show_groups(request):
                 val=temp-ava
         else:
             val=0
+        print(val)
         return render(request, 'users/show_groups.html',{'number':val})
     except:
         return redirect(reverse('homepage'))
@@ -133,6 +134,7 @@ def home(request):
                     sent_pk = obj.to
                     sent_user = User.objects.get(pk=sent_pk)
                     sent_obj.append(sent_user)
+                
             received=[]
             received_obj = []
             for obj in messages:
@@ -162,6 +164,8 @@ def home(request):
                 post.save()
                 form = postform()
                 return redirect(reverse('homepage'))
+            else:
+                return redirect(reverse('homepage'))
             args = {'form': form}
             return render(request, 'users/homepage.html',args)
     # except:
@@ -175,8 +179,9 @@ def transaction_occur(request):
         for obj in friends:
             friend_id.append(obj.id)
         transactions_pending = transactions.objects.filter(to_user=request.user)
+        transaction_req_pending = money_requests.objects.filter(to_user=request.user)
         args = {
-            'friend_id':friend_id,'friend_iter':friends,'pending':transactions_pending
+            'friend_id':friend_id,'friend_iter':friends,'pending':transactions_pending,'pending_cash_requests':transaction_req_pending,
         }
         return render(request, 'users/transactions.html',args)
     except:
@@ -191,8 +196,10 @@ def do_transactions(request,pk=None):
                 request.session['amount']=t_amount
                 if float(t_amount) > request.user.account_balance or float(t_amount)<0 or request.user.number_of_transactions<0:
                     return redirect(reverse('profilepage'))
+
                 return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_transactions','pk':pk}))
-               
+            else:
+                return redirect(reverse('homepage'))
         else:
             form = get_transaction_amount(instance=request.user)
             args = {'form': form}
@@ -208,7 +215,7 @@ def confirm_transactions(request,pk):
             other_user2 = User.objects.get(pk=pk)
         except:
             return redirect(reverse('homepage'))
-        if request.session['reverify']==1 and Friend.objects.are_friends(user2,other_user2)==True and user2.account_balance>=request.session['amount']:
+        if request.session['reverify']==1 and Friend.objects.are_friends(user2,other_user2)==True and user2.account_balance>=float(request.session['amount']):
             with transaction.atomic():
                 user1 = User.objects.select_for_update().get(pk=request.user.id)
                 try:
@@ -239,10 +246,17 @@ def accept_money(request,pk):
         except:
             return redirect(reverse('homepage'))
         cur_user = request.user
+        fu = transaction_req.from_user
+        tu = transaction_req.to_user
+        if not tu == request.user:
+            print("wfq")
+            return redirect(reverse('homepage'))
         cur_user.number_of_transactions=cur_user.number_of_transactions-1
+        other_user=fu
         other_user.number_of_transactions=other_user.number_of_transactions-1
         cur_user.account_balance = cur_user.account_balance + transaction_req.amount
         cur_user.save()
+        other_user.save()
         transaction_req.delete()
         return redirect(reverse('profilepage'))
     except:
@@ -250,24 +264,22 @@ def accept_money(request,pk):
 
 @otp_required
 def confirm_add_money(request):
-    # try:
         if request.session['reverify']==1:
             with transaction.atomic():
                 user1 = User.objects.select_for_update().get(pk=request.user.id)
                 if (user1.bank_account-float(request.session['amount'])) < 0 :
                     request.session['reverify']=None
-                    return redirect(reverse('upgrade'))
+                    return redirect(reverse('homepage'))
                 prev_balance = user1.account_balance
                 user1.account_balance = prev_balance + float(request.session['amount'])
                 user1.bank_account = user1.bank_account - float(request.session['amount'])
                 user1.save()
+                request.session['amount']=0
                 request.session['reverify']=None
             return redirect(reverse('profilepage'))
         else:
             request.session['reverify']=None
             return redirect(reverse('homepage'))
-    # except:
-        # return redirect(reverse('homepage'))
 
 @otp_required
 def add_money(request):
@@ -280,6 +292,8 @@ def add_money(request):
                     return redirect(reverse('profilepage'))
                 request.session['amount']=t_amount
                 return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_add_money','pk':1036372758}))
+            else:
+                return redirect(reverse('homepage'))
         else:
             form = get_amount(instance=request.user)
             args = {'form': form}
@@ -293,6 +307,10 @@ def reject_money(request,pk):
         try:
             transaction_req = transactions.objects.get(pk=pk)
         except:
+            return redirect(reverse('homepage'))
+        fu = transaction_req.from_user
+        tu = transaction_req.to_user
+        if not tu == request.user:
             return redirect(reverse('homepage'))
         cur_user = transaction_req.from_user
         cur_user.account_balance = cur_user.account_balance + transaction_req.amount
@@ -363,11 +381,9 @@ def remove_friend(request,pk):
         return redirect(reverse('homepage'))
 
 def welcome(request):
-    try:
-        request.session['reverify']=None
-        return render(request, 'users/welcome.html')
-    except:
-        return redirect(reverse('homepage'))
+    request.session['reverify']=None
+    return render(request, 'users/welcome.html')
+
 
 
 @otp_required
@@ -398,6 +414,8 @@ def timeline(request,pk):
                         post.save()
                         form = postform()
                         return redirect(reverse("Timeline",kwargs={'pk':other_user.pk}))
+                    else:
+                        return redirect(reverse('homepage'))
             return render(request,'users/timeline.html',{'friend':other_user,'posts': post})
         return redirect(reverse('homepage'))
     except:
@@ -447,6 +465,8 @@ def editprofile(request):
                 form.save()
                 form1.save()
                 return redirect(reverse('profilepage'))
+            else:
+                return redirect(reverse('homepage'))
         else:
             form = EditProfileForm(instance=request.user)
             form1 = EditProfileFormextend(instance=request.user.userprofile)
@@ -480,9 +500,18 @@ def otpsetup(request):
     try:
         if request.user.is_verified()==True:
             return redirect(reverse('homepage'))
+        print("OH")
         totp=TOTPDevice.objects.get(user_id=request.user.id)
+        ke=Keys.objects.filter(user_id=request.user.id)
         form_cls = partial(SimpleOTPRegistrationForm, request.user)
         temp=totp.config_url.replace("/", "%2F")
+        if not ke:
+            RSAkey = RSA.generate(1024)
+            key = RSAkey.exportKey().decode('ascii')
+            pubkey = RSAkey.publickey().exportKey().decode('ascii')
+            obj = Keys(user=request.user,pub_key=pubkey)
+            obj.save()
+            return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'priv':key})(request)
         return auth_views.LoginView.as_view(template_name='users/otp_setup.html', authentication_form=form_cls,extra_context={'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp)})(request)
     except:
         return redirect(reverse('homepage'))
@@ -491,7 +520,9 @@ def signup(request):
     try:
         if request.method == 'POST':
             form = SignUpForm(request.POST)
+            print("ef")
             if form.is_valid():
+                print("hI")
                 user = form.save()
                 user.save()
                 totp=TOTPDevice()
@@ -502,6 +533,8 @@ def signup(request):
                 user = authenticate(username=user.username, password=raw_password)
                 login(request, user)
                 return HttpResponseRedirect(reverse('otpsetup'))
+            else:
+                return redirect(reverse('welcome'))
         else:
             form = SignUpForm()
         return render(request, 'users/register.html', { 'form' : form })
@@ -511,7 +544,7 @@ def signup(request):
 @otp_required
 def upgrade(request):
     try:
-        if request.user.premium_user==True:
+        if request.user.premium_user==True or request.user.commercial_user==True:
             return redirect(reverse('profilepage'))
         plan=[]
         if (request.user.account_balance - 50)>=0:
@@ -533,6 +566,7 @@ def silver_plan(request):
             return redirect(reverse('profilepage'))
         if (request.user.account_balance-50) < 0 :
             return redirect(reverse('upgrade'))
+        
         return render(request, 'users/silver_plan.html')
     except:
         return redirect(reverse('homepage'))
@@ -575,6 +609,7 @@ def commercial_plan(request):
 def get_commercial(request):
     try:
         if request.session['reverify']==1:
+            request.session['reverify'] = None
             if request.user.commercial_user==True or request.user.premium_user==True:
                 return redirect(reverse('profilepage'))
             if (request.user.account_balance-5000) < 0:
@@ -606,6 +641,7 @@ def send_group_request(request,pk):
         cur_user = request.user
         money_with_user = cur_user.account_balance
         money_to_join = group_to_join.price
+        request.session['amount']=group_to_join.price
         if money_to_join > money_with_user:
             return redirect(reverse('show_groups'))
         return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_send_group_request','pk':pk}))
@@ -616,8 +652,7 @@ def send_group_request(request,pk):
 def confirm_send_group_request(request,pk):
     try:
         user2 = User.objects.get(pk=request.user.id)
-        request.session['amount']=group_to_join.price
-        if request.session['reverify']==1 and request.session['amount']<user2.account_balance:
+        if request.session['reverify']==1 and float(request.session['amount'])<user2.account_balance:
             with transaction.atomic():
                 try:
                     group_to_join = Group.objects.select_for_update().get(pk=pk)
@@ -628,7 +663,7 @@ def confirm_send_group_request(request,pk):
                 # grp_owner.account_balance += request.session['amount']
                 group_request1 = group_requests()
                 group_request1.group = group_to_join
-                group_request1.user = cur_user
+                group_request1.user = request.user
                 group_request1.save()
                 # grp_owner.save()
                 request.session['amount']=0
@@ -667,6 +702,8 @@ def reverify(request,plan,pk):
                     if plan=="confirm_send_group_request":
                         return HttpResponseRedirect(reverse(plan,kwargs={'pk':pk}))
                     return HttpResponseRedirect(reverse(plan))
+                else:
+                    return redirect(reverse('homepage'))
             else:
                 return render(request,'users/otp_setup.html',{'form':form,'otpstring':"https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl="+str(temp),'verification':True,'plan':plan})
         else:
@@ -707,8 +744,7 @@ def get_silver(request):
 
 @otp_required
 def get_gold(request):
-    try:
-        
+    try:    
         user2 = User.objects.get(pk=request.user.id)
         if request.session['reverify']==1:
             if user2.premium_user==True or user2.commercial_user==True:
@@ -776,7 +812,7 @@ def cancel_plan(request):
             cur_user.premium_user = False
             cur_user.number_of_transactions = 15
             cur_user.save()
-        else:
+        if request.user.commercial_user==True:
             commercial_users.objects.filter(user=request.user).delete()
             cur_user = request.user
             cur_user.commercial_user = False
@@ -805,7 +841,6 @@ def accept_group_request(request,pk):
 @otp_required
 def request_cash(request,pk):
     try:
-        
         if request.method == 'POST':
             form = get_amount(request.POST)
             if form.is_valid():
@@ -823,6 +858,8 @@ def request_cash(request,pk):
                 money_request.to_user = other_user
                 money_request.save()
                 return redirect(reverse('profilepage'))
+            else:
+                return redirect(reverse('homepage'))
         else:
             form = get_amount(instance=request.user)
             args = {'form': form}
@@ -843,7 +880,7 @@ def accept_cash_request(request,pk):
         if Friend.objects.are_friends(request.user,other_user)==False:
             return redirect(reverse('profilepage'))
         if float(the_request.amount) > request.user.account_balance or float(the_request.amount)<0:
-            print("\n\nnot un-friends\n\n")
+            # print("\n\nnot un-friends\n\n")
             return redirect(reverse('profilepage'))
         return redirect(reverse("otp_reverify",kwargs={'plan':'confirm_accept_cash_request','pk':pk}))
     except:
@@ -855,10 +892,13 @@ def del_page(request):
     if request.user.commercial_user==False:
         return redirect(reverse('profilepage'))
     else:
-        lis = Pages.objects.filter(user_id=request.user.id)
-        print(lis)
-        args = {'lis':lis,}
-        return render(request, 'users/del_page.html', args)
+        try:
+            lis = Pages.objects.filter(user_id=request.user.id)
+            print(lis)
+            args = {'lis':lis,}
+            return render(request, 'users/del_page.html', args)
+        except:
+            return redirect(reverse('homepage'))
 
 
 @otp_required
@@ -866,16 +906,18 @@ def delete_page(request,pk1):
     if request.user.commercial_user==False:
         return redirect(reverse('profilepage'))
     else:
-        Pages.objects.get(pk=pk1).delete()
-        lis = Pages.objects.filter(user_id=request.user.id)
-        print(lis)
-        args = {'lis':lis,}
-        return render(request, 'users/del_page.html', args)
+        try:         
+            Pages.objects.get(pk=pk1).delete()
+            lis = Pages.objects.filter(user_id=request.user.id)
+            print(lis)
+            args = {'lis':lis,}
+            return render(request, 'users/del_page.html', args)
+        except:
+            return redirect(reverse('homepage'))
 
 @otp_required
 def confirm_accept_cash_request(request,pk):
-    try:
-        
+    # try:
         user2 = User.objects.get(pk=request.user.id)
         try:
             the_request = money_requests.objects.get(pk=pk)
@@ -883,12 +925,16 @@ def confirm_accept_cash_request(request,pk):
             return redirect(reverse('homepage'))
         request.session['amount']=float(the_request.amount)
         other_user2 = the_request.from_user
-        if request.session['reverify']==1 and Friend.objects.are_friends(user2,other_user2)==True and request.session['amount']<user2.account_balance:
+        fu = the_request.from_user
+        tu = the_request.to_user
+        if not tu == request.user:
+            return redirect(reverse('homepage'))
+        if request.session['reverify']==1 and Friend.objects.are_friends(user2,other_user2)==True and float(request.session['amount'])<user2.account_balance:
             with transaction.atomic():
-                user1 = User.objects.select_for_update().get(pk=user1.id)
-                other_user = User.objects.select_for_update().get(pk=other_user.pk)
+                user1 = User.objects.select_for_update().get(pk=request.user.id)
+                other_user = User.objects.select_for_update().get(pk=fu.id)
                 user1.account_balance = user1.account_balance - float(request.session['amount'])
-                other_user.account_balance += request.session['amount']
+                other_user.account_balance += float(request.session['amount'])
                 other_user.save()
                 request.session['amount']=0
                 request.session['reverify']=None
@@ -896,21 +942,23 @@ def confirm_accept_cash_request(request,pk):
                 the_request.delete()
             return redirect(reverse('profilepage'))
         else:
-            print("\n\nNot Here:(\n\n")
             request.session['reverify']=None
             return redirect(reverse('profilepage'))
 
         return redirect(reverse('profilepage'))
-    except:
-        return redirect(reverse('homepage'))
+    # except:
+    #     return redirect(reverse('homepage'))
 
 @otp_required
 def reject_cash_request(request,pk):
     try:
-
         try:
             the_request = money_requests.objects.get(pk=pk)
         except:
+            return redirect(reverse('homepage'))
+        fu = the_request.from_user
+        tu = the_request.to_user
+        if not tu == request.user:
             return redirect(reverse('homepage'))
         the_request.delete()
         return redirect(reverse('profilepage'))
@@ -946,13 +994,14 @@ def create_page(request):
             return redirect(reverse('profilepage'))
         else:
             if request.method == 'POST':
-               form = page_form(request.POST,request.FILES)
-               if form.is_valid():
+                form = page_form(request.POST,request.FILES)
+                if form.is_valid():
                    post = form.save(commit=False)
                    post.user = request.user
                    post.save()
                    return redirect(reverse('profilepage'))
-
+                else:
+                    return redirect(reverse('homepage'))
             else:
                 form = page_form()
                 args = {'form': form}
@@ -972,4 +1021,3 @@ def show_page(request,pk1):
         return render(request, 'users/show_page.html', args)
     except:
         return redirect(reverse('homepage'))
-

@@ -25,12 +25,24 @@
 </div> -->
 <div class = "container">
 <p>
-	{{user.account_balance}}
-	<form action="" method="post">
+	Amount in Wallet: {{user.account_balance}}</br>
+	Amount in Bank: {{user.bank_account}}
+	<script>
+			function myFunction(){
+				var amt=document.getElementById("id_amt").value
+				key = document.getElementById("private_key")
+				var encrypt = new JSEncrypt();
+				encrypt.setPublicKey(key.value)
+				var encrypted_amount = encrypt.encrypt(amt);
+			}
+		</script>
+	<form action="" method="post" onsubmit="myFunction();">
 		{% csrf_token %}
 		{{ form.as_p }}
+		<h3>Enter private Key</h3><input id="private_key" type="text" required maxlength = "2000" />
 		<button type="submit">Submit</button>
 	</form>
+	
 </p>
 
 </div>

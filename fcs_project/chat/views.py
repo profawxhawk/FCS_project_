@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from users.models import User
 from django.urls import reverse
 import json
+from .models import Message
 from django.contrib.sessions.models import Session
 from django_otp.decorators import otp_required
 from friendship.models import Friend, Follow, Block,FriendshipRequest
@@ -20,7 +21,9 @@ def room(request,pk):
             other_user = User.objects.get(pk=pk)
         except:
             return redirect(reverse('homepage'))
-        if request.user.commercial_user==True or ( (request.user.premium_user==True or other_user.premium_user==True) and Friend.objects.are_friends(request.user, other_user)==True):
+        mess = Message.objects.filter(author=other_user,to = request.user.pk)
+        print(mess)
+        if request.user.commercial_user==True or ( (request.user.premium_user==True or other_user.premium_user==True) and Friend.objects.are_friends(request.user, other_user)==True) or (other_user.commercial_user==True and mess):
             a = min(int(request.user.id),int(pk))
             b = max(int(pk),int(request.user.id))
             return render(request, 'chat/room.html', {
