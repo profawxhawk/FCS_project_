@@ -24,7 +24,7 @@ from binascii import unhexlify
 import sys
 import requests
 from chat.models import Message
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.template import RequestContext
 from django.utils.html import strip_tags,escape
 from django.db.models import Q
